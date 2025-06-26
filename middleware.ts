@@ -64,6 +64,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Handle onboarding redirection
+  if (session && pathname !== '/onboarding') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('has_completed_onboarding')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profile && !profile.has_completed_onboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/onboarding';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return response;
 }
 
