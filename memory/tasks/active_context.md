@@ -1,15 +1,17 @@
 # Active Development Context
 
 ## Current Work Focus:
-- **Finalizing Authentication UX:** The core authentication flow is now functionally complete and user-friendly, with the implementation of password reset and loading state feedback.
+- **Completed Onboarding Flow:** The full user onboarding experience has been implemented, from database setup to the frontend UI and redirection logic.
 
 ## Active Decisions and Considerations:
-- **Social Logins as Future Work:** While Task 1.9 (Social Logins) is planned, it is a lower priority (P2) and can be addressed after the core MVP features are in place. We will now proceed to the next major epic.
+- **Core Experience Next:** With authentication and onboarding complete, the project is ready to move to the most critical phase: building the core news feed experience.
 
 ## Recent Changes:
-- Implemented the full password reset flow (Task 1.7).
-- Added loading indicators to all authentication forms (Task 1.8).
-- Marked tasks 1.7 and 1.8 as complete in `tasks_plan.md`.
+- **Completed Onboarding UI and Logic (Tasks 2.2, 2.3, 2.4):**
+  - Created the `/onboarding` page and the `OnboardingForm` component.
+  - Implemented logic to save user category preferences and update their profile.
+  - Added middleware to redirect new, un-onboarded users to the `/onboarding` page.
+- Marked all tasks in Epic 2 as complete in `tasks_plan.md`.
 
 ## Next Steps:
-- **Begin Onboarding Epic (Epic 2):** Start work on the "Onboarding & Personalization Setup" epic. The first task is **Task 2.1: Create the `categories` and `user_preferred_categories` tables in Supabase.**
+- **Begin Core News Feed Epic (Epic 3):** Start work on the "Core News Feed Experience" epic. The first task is **Task 3.1: Set up the data ingestion pipeline.**

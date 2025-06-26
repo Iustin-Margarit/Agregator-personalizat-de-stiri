@@ -34,22 +34,22 @@
 - **Importance:** High
 - **Dependencies:** Epic 1
 - **Sub-Tasks:**
-    - [ ] **Task 2.1 (Database):** Create `categories` and `user_preferred_categories` tables.
-        - [ ] **Task 2.1.1:** Define and create the `categories` table schema (id, name).
-        - [ ] **Task 2.1.2:** Define and create the `user_preferred_categories` table schema (user_id, category_id) with foreign keys.
-        - [ ] **Task 2.1.3:** Create a Supabase seed script to populate the `categories` table with initial data.
-    - [ ] **Task 2.2 (Frontend):** Build the onboarding page UI.
-        - [ ] **Task 2.2.1:** Create the route and page file for the onboarding screen (`/onboarding`).
-        - [ ] **Task 2.2.2:** Fetch and display categories as a list of selectable items (e.g., checkboxes).
-        - [ ] **Task 2.2.3:** Add a "Save" or "Continue" button.
-    - [ ] **Task 2.3 (Logic):** Implement logic to save user preferences.
-        - [ ] **Task 2.3.1:** On submit, collect the IDs of selected categories.
-        - [ ] **Task 2.3.2:** Insert the selections into the `user_preferred_categories` table.
-        - [ ] **Task 2.3.3:** Add and set a `has_completed_onboarding` flag in the user's `profiles` table.
-        - [ ] **Task 2.3.4:** Redirect the user to the main feed (`/saved`) after submission.
-    - [ ] **Task 2.4 (Routing):** Implement forced redirection for new users.
-        - [ ] **Task 2.4.1:** In the middleware, if a user is logged in, check the `has_completed_onboarding` flag on their profile.
-        - [ ] **Task 2.4.2:** If the flag is `false`, redirect the user to `/onboarding`.
+    - [x] **Task 2.1 (Database):** Create `categories` and `user_preferred_categories` tables.
+        - [x] **Task 2.1.1:** Define and create the `categories` table schema (id, name).
+        - [x] **Task 2.1.2:** Define and create the `user_preferred_categories` table schema (user_id, category_id) with foreign keys.
+        - [x] **Task 2.1.3:** Create a Supabase seed script to populate the `categories` table with initial data.
+    - [x] **Task 2.2 (Frontend):** Build the onboarding page UI.
+        - [x] **Task 2.2.1:** Create the route and page file for the onboarding screen (`/onboarding`).
+        - [x] **Task 2.2.2:** Fetch and display categories as a list of selectable items (e.g., checkboxes).
+        - [x] **Task 2.2.3:** Add a "Save" or "Continue" button.
+    - [x] **Task 2.3 (Logic):** Implement logic to save user preferences.
+        - [x] **Task 2.3.1:** On submit, collect the IDs of selected categories.
+        - [x] **Task 2.3.2:** Insert the selections into the `user_preferred_categories` table.
+        - [x] **Task 2.3.3:** Add and set a `has_completed_onboarding` flag in the user's `profiles` table.
+        - [x] **Task 2.3.4:** Redirect the user to the main feed (`/saved`) after submission.
+    - [x] **Task 2.4 (Routing):** Implement forced redirection for new users.
+        - [x] **Task 2.4.1:** In the middleware, if a user is logged in, check the `has_completed_onboarding` flag on their profile.
+        - [x] **Task 2.4.2:** If the flag is `false`, redirect the user to `/onboarding`.
 
 ### Epic 3: Core News Feed Experience (US-03, US-04, US-05)
 - **Context:** The central feature of the application.

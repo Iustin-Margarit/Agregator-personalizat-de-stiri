@@ -27,6 +27,13 @@
 - **Serverless Functions for Backend Logic:** Using Supabase Edge Functions for data ingestion and complex queries keeps the frontend light and centralizes business logic.
 - **Row Level Security (RLS):** Implementing RLS in the database is the primary security measure, ensuring users can only access their own data.
 - **Database Migrations via CLI:** Managing schema changes through version-controlled migration files ensures a repeatable and reliable deployment process.
+- **Supabase CLI Setup:**
+    - **Installation:** It's recommended to install the Supabase CLI using a supported package manager. For Windows, Scoop is a good option.
+        - Install Scoop (if you haven't already): `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm get.scoop.sh | iex`
+        - Then, install Supabase CLI: `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git; scoop install supabase`
+    - **Log in to your Supabase account:** `supabase login`
+    - **Link your local project to your Supabase project:** `supabase link --project-ref your-project-ref`
+      (You can find `your-project-ref` in your Supabase project settings URL: `https://app.supabase.com/project/YOUR_PROJECT_REF/settings`)
 
 ---
 
