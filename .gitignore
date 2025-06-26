@@ -3,3 +3,4 @@
    .roo/
    .windsurf/
    .github/copilot-instructions.md
+node_modules
