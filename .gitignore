@@ -1,6 +1,45 @@
-   .cursor/rules/
-   .clinerules/
-   .roo/
-   .windsurf/
-   .github/copilot-instructions.md
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Local Environment Variables
+# Contains secrets and should NEVER be committed.
+.env.local
+.env.*.local
+
+# Build output
+.next/
+out/
+
+# Dependencies
 node_modules
+
+# VSCode Editor
+.vscode/*
+!.vscode/extensions.json
+
+# User-specific tool configurations (from your original file)
+.cursor/
+.clinerules/
+.roo/
+.windsurf/
+.github/copilot-instructions.md
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
