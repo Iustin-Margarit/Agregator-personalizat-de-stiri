@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { revalidateSavedAndOnboardingPages } from '@/app/actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +16,12 @@ type Category = {
 
 interface OnboardingFormProps {
   categories: Category[];
+  initialSelectedCategoryIds: string[];
 }
 
-export default function OnboardingForm({ categories }: OnboardingFormProps) {
+export default function OnboardingForm({ categories, initialSelectedCategoryIds }: OnboardingFormProps) {
   const router = useRouter();
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialSelectedCategoryIds);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +96,7 @@ export default function OnboardingForm({ categories }: OnboardingFormProps) {
     }
 
     setIsLoading(false);
+    await revalidateSavedAndOnboardingPages(); // Revalidate paths to force data re-fetch
     router.push('/saved');
   };
 
@@ -108,6 +111,7 @@ export default function OnboardingForm({ categories }: OnboardingFormProps) {
             <div key={category.id} className="flex items-center space-x-2">
               <Checkbox
                 id={category.id}
+                checked={selectedCategories.includes(category.id)}
                 onCheckedChange={() => handleCategoryChange(category.id)}
               />
               <Label htmlFor={category.id} className="cursor-pointer">

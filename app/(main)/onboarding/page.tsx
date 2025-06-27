@@ -13,12 +13,31 @@ export default async function OnboardingPage() {
     return redirect('/login');
   }
 
-  const { data: categories, error } = await supabase
+  const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('id, name');
 
-  if (error) {
-    console.error('Error fetching categories:', error);
+  if (categoriesError) {
+    console.error('Error fetching categories:', categoriesError);
+    return <div>Error loading categories. Please try again later.</div>;
+  }
+
+  const { data: userPreferences, error: preferencesError } = await supabase
+    .from('user_preferred_categories')
+    .select('category_id')
+    .eq('user_id', user.id);
+
+  if (preferencesError) {
+    console.error('Error fetching user preferences:', preferencesError);
+    return <div>Error loading user preferences. Please try again later.</div>;
+  }
+
+  const initialSelectedCategoryIds = userPreferences.map(
+    (pref) => pref.category_id
+  );
+
+  if (categoriesError) {
+    console.error('Error fetching categories:', categoriesError);
     return <div>Error loading categories. Please try again later.</div>;
   }
 
@@ -31,7 +50,10 @@ export default async function OnboardingPage() {
             Select your favorite topics to get started.
           </p>
         </div>
-        <OnboardingForm categories={categories || []} />
+        <OnboardingForm
+          categories={categories || []}
+          initialSelectedCategoryIds={initialSelectedCategoryIds}
+        />
       </div>
     </div>
   );

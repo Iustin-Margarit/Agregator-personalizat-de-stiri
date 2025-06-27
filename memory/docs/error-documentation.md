@@ -16,3 +16,17 @@
 - **Date:** 2025-06-26
 - **Root Cause:** The environment variables in the `.env.local` file, specifically the long Supabase keys, were split across multiple lines. The `.env` file format requires each variable assignment to be on a single line.
 - **Solution:** The `.env.local` file was corrected by ensuring that each environment variable and its value were on a single, continuous line.
+
+## 3. Login Credentials Disappear and Login Fails
+
+- **Symptom:** When attempting to log in at `http://localhost:3000/login`, credentials disappear from input fields, and the user is not logged in. Browser console shows 404 errors for Next.js static JavaScript chunks (e.g., `_next/static/chunks/app-pages-internals.js`, `_next/static/chunks/main-app.js`).
+- **Date:** 2025-06-27
+- **Root Cause:** The Next.js development server was failing to properly build and serve essential JavaScript bundles. This prevented the client-side React application, including the login form's state management and submission logic, from executing correctly. The 404 errors indicated that these critical files were not found by the browser.
+- **Solution:** A clean rebuild of the Next.js project was performed:
+    1. All active `npm run dev` processes were stopped.
+    2. The Next.js build cache and output directory (`.next`) was deleted using `Remove-Item -Recurse -Force .next`.
+    3. The `package-lock.json` file was deleted (manually, due to a stuck command).
+    4. The `node_modules` directory was deleted using `Remove-Item -Recurse -Force node_modules`.
+    5. Project dependencies were reinstalled using `npm install`.
+    6. The Next.js development server was restarted using `npm run dev`.
+    This process ensured a fresh build and proper serving of all necessary JavaScript assets, resolving the login functionality.

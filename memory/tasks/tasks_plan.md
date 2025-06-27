@@ -18,6 +18,7 @@
     - [x] **Task 1.1 (Database):** Set up Supabase project and configure the `profiles` table with RLS policies.
     - [x] **Task 1.2 (Frontend):** Create the UI for the login and sign-up pages using `shadcn/ui` components (`Card`, `Input`, `Button`).
     - [x] **Task 1.3 (Logic):** Implement the client-side logic to call `supabase.auth.signUp()` and `supabase.auth.signInWithPassword()`.
+        - **Note:** A bug causing login credentials to disappear and login failure was fixed on 2025-06-27. Root cause was Next.js static chunk loading issues, resolved by a clean rebuild (see `error-documentation.md`).
     - [x] **Task 1.4 (Routing):** Implement the authentication listener (`onAuthStateChange`) to handle redirects after login/logout.
     - [x] **Task 1.5 (Backend):** Create a Supabase database trigger to automatically create a `profiles` row when a new user signs up in `auth.users`.
     - [x] **Task 1.6 (Frontend):** Implement a global logout button and conditionally hide it on auth pages.
@@ -28,6 +29,8 @@
         - [ ] **Task 1.9.2 (Frontend):** Add a "Sign in with Google" button to the login and signup pages.
         - [ ] **Task 1.9.3 (Logic):** Implement the `supabase.auth.signInWithOAuth()` function call.
         - [ ] **Task 1.9.4 (Testing):** Ensure the profile creation trigger works for OAuth sign-ups.
+    - [ ] **Task 1.10 (P0 - Critical):** Address critical security vulnerability identified by `npm audit`.
+        - **Context:** During `npm install`, a critical severity vulnerability was reported. This task is to run `npm audit fix --force` and verify its impact.
 
 ### Epic 2: Onboarding & Personalization Setup (US-02)
 - **Context:** Critical for the initial feed personalization.
