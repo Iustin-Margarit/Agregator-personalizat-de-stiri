@@ -73,7 +73,12 @@ export default async function SavedPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Saved Articles</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Saved Articles</h1>
+        <Button asChild>
+          <Link href="/onboarding">Preferred Topics</Link>
+        </Button>
+      </div>
       {articles.length === 0 ? (
         <div className="text-center text-gray-500">
           <p className="text-lg">You haven't saved any articles yet.</p>
