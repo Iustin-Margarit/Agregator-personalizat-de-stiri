@@ -1,20 +1,16 @@
-# Meta-Rules for AI Assistant Interaction (Enhanced)
+# Meta-Rules for AI Assistant Interaction (Advanced Simplified - Mode Logic Preserved)
 
-You will receive a sequence of approximately 10 rule files, starting with this one (the 0th file). Process them in order as they provide context and instructions for our interaction.
+You will receive a sequence of rule files providing context and instructions. Process them in order.
 
 **File Sequence Purpose Overview:**
-*   **This File (0th):** Explains the overall system, how to interpret the subsequent files, and how to determine your operational focus.
-*   **Files 1 through 4 (approx.):** Project Memory Bank (Requirements, Architecture, Technical Details, Lessons Learned, etc.). Consult as directed or needed. Note `alwaysApply` flags. **These files provide essential context.**
-*   **File 5 (approx.):** Project Directory Structure.
-*   **File 6 (approx.):** General Principles and Best Practices (**ALWAYS FOLLOW**).
-*   **Files 7 through 9 (approx.):** Specific operational workflows:
-    *   **File 7 (approx.):** Rules for **FOCUS = PLANNING** (analysis, design, planning).
-    *   **File 8 (approx.):** Rules for **FOCUS = IMPLEMENTATION** (coding based on a plan).
-    *   **File 9 (approx.):** Rules for **FOCUS = DEBUGGING** (diagnosing/fixing errors).
+*   **This File (0th):** Overall system, focus determination.
+*   **Files 1-5 (approx.):** Project Context (Memory Bank definitions, Directory Structure). Consult as needed/directed.
+*   **File 6 (approx.):** General Principles & Best Practices (**ALWAYS FOLLOW**).
+*   **Files 7-9 (approx.):** Specific Workflows (**FOCUS** = PLANNING, IMPLEMENTATION, DEBUGGING).
 
 **Determining Your Operational Focus and Applicable Rules:**
 
-Apply the MOST relevant specific workflow rule set (from files approx. 7, 8, or 9) IN ADDITION to the general rules (file approx. 6). **Crucially, initial consultation of relevant Memory Bank files (as guided by File 6 and the specific workflow files) is a prerequisite step before fully executing the logic within a chosen FOCUS.** Use the following hierarchy to determine FOCUS:
+Apply the MOST relevant specific workflow rule set (from files approx. 7, 8, or 9) IN ADDITION to the general rules (file approx. 6) and required memory files (files approx. 1-4 as needed). Use the following hierarchy:
 
 1.  **Explicit User Command:** Check IF the user's LATEST request contains an explicit instruction like `FOCUS = PLANNING`, `FOCUS = IMPLEMENTATION`, or `FOCUS = DEBUGGING`.
     *   IF YES: Prioritize applying the workflow rules associated with that specified FOCUS (File 7, 8, or 9). This command OVERRIDES other factors for this turn.
@@ -33,8 +29,8 @@ Apply the MOST relevant specific workflow rule set (from files approx. 7, 8, or 
     *   **Action on Ambiguity:** If your internal mode covers multiple FOCUS types (like Cline's 'Act'), rely primarily on the FOCUS determined in Step 2 from the *specific request*. Your internal mode serves as broader context but doesn't dictate the rules file if the request is clearly about one specific FOCUS (e.g., debugging).
 
 **Applying Rules:**
-*   Always apply the rules from file approx. 6 (General Principles). **Ensure required Memory Bank consultations outlined in File 6 happen first.**
-*   Apply the *one* most relevant specific workflow rule set (from files approx. 7, 8, or 9) determined primarily by Step 1 or Step 2 logic.
-*   Consult memory bank files (approx. 1-4) **actively and as specified** within the applicable general and workflow rule files, or when directed by the user. The *depth* of consultation may vary based on task scope (Epic vs. Story vs. Task), but checking for *relevance* is always required.
+*   **Always apply File 6 (General Principles).** This includes initial context gathering relevant to the task.
+*   **Apply the ONE most relevant workflow file (7, 8, or 9)** based on the determined FOCUS (using the detailed logic above).
+*   **Consult Memory Bank files** actively as needed for context and validation, guided by the principles in File 6 and the current workflow.
 
-**(End of Meta-Rules - Enhanced)**
+**(End of Meta-Rules - Advanced Simplified - Mode Logic Preserved)**
