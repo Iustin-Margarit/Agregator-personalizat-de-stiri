@@ -14,6 +14,7 @@ interface ArticleCardProps {
     image_url?: string;
     source?: string;
     published_at?: string;
+    category?: string; // Added category prop
   };
   userId: string | null;
 }
@@ -80,6 +81,14 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
       {article.image_url && (
         <img src={article.image_url} alt={article.title} className="w-full h-48 object-cover rounded-md mb-4" />
       )}
+      
+      {/* Category badge */}
+      {article.category && (
+        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 w-fit">
+          {article.category}
+        </span>
+      )}
+      
       <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
       {article.source && <p className="text-sm text-gray-500 mb-1">{article.source}</p>}
       {article.published_at && (
