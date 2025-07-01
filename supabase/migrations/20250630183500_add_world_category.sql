@@ -1,0 +1,1 @@
+INSERT INTO public.categories (name) VALUES ('World') ON CONFLICT (name) DO NOTHING;

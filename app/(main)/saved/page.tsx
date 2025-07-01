@@ -46,29 +46,75 @@ export default async function SavedPage() {
 
   const preferredCategoryIds = preferredCategoriesData?.map((pc) => pc.category_id) || [];
 
-  let articles = [];
-  if (savedArticleIds.length > 0 || preferredCategoryIds.length > 0) {
-    let query = supabase.from('articles').select('id, title, summary, url, image_url, source, published_at');
+  let articles: any[] = [];
+  
+  if (savedArticleIds.length > 0) {
+    // Get saved articles (these might be either example articles or ingested articles)
+    const { data: savedArticles, error: savedError } = await supabase
+      .from('articles')
+      .select('id, title, summary, url, image_url, source, published_at')
+      .in('id', savedArticleIds)
+      .order('published_at', { ascending: false });
 
-    if (savedArticleIds.length > 0 && preferredCategoryIds.length > 0) {
-      query = query.or(`id.in.(${savedArticleIds.join(',')}),category_id.in.(${preferredCategoryIds.join(',')})`);
-    } else if (savedArticleIds.length > 0) {
-      query = query.in('id', savedArticleIds);
-    } else if (preferredCategoryIds.length > 0) {
-      query = query.in('category_id', preferredCategoryIds);
+    if (savedError) {
+      console.error('Error fetching saved articles:', savedError);
+      return <div>Error loading saved articles.</div>;
     }
 
-    const { data: articlesData, error: articlesError } = await query.order('published_at', { ascending: false });
+    articles = savedArticles || [];
+  }
 
-    if (articlesError) {
-      console.error('Error fetching articles:', articlesError);
-      return <div>Error loading articles.</div>;
+  // Also include recent articles from preferred categories (only ingested ones)
+  if (preferredCategoryIds.length > 0) {
+    const { data: categoryArticles, error: categoryError } = await supabase
+      .from('articles')
+      .select(`
+        id, 
+        title, 
+        summary, 
+        url, 
+        image_url, 
+        source, 
+        published_at,
+        sources!source_id(
+          name,
+          category_id,
+          categories!category_id(
+            name
+          )
+        )
+      `)
+      .not('source_id', 'is', null) // Only ingested articles
+      .order('published_at', { ascending: false })
+      .limit(20); // Limit to recent articles
+
+    if (categoryError) {
+      console.error('Error fetching category articles:', categoryError);
+    } else {
+      // Filter by preferred categories and add category names
+      const filteredCategoryArticles = (categoryArticles || []).filter(article => {
+        const source = Array.isArray(article.sources) ? article.sources[0] : article.sources;
+        return source && preferredCategoryIds.includes(source.category_id);
+      }).map(article => {
+        const source = Array.isArray(article.sources) ? article.sources[0] : article.sources;
+        const category = source?.categories ? 
+          (Array.isArray(source.categories) ? source.categories[0] : source.categories) : null;
+        
+        return {
+          ...article,
+          category: category?.name || 'Unknown'
+        };
+      });
+
+      // Merge with saved articles and remove duplicates
+      const allArticles = [...articles, ...filteredCategoryArticles];
+      const uniqueArticles = new Map();
+      allArticles.forEach(article => uniqueArticles.set(article.id, article));
+      articles = Array.from(uniqueArticles.values());
+      
+      // Sort by published date
+      articles.sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime());
     }
-
-    // Filter out duplicates if an article appears in both saved and preferred categories
-    const uniqueArticles = new Map();
-    articlesData?.forEach(article => uniqueArticles.set(article.id, article));
-    articles = Array.from(uniqueArticles.values());
   }
 
   return (

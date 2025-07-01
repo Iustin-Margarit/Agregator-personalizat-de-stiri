@@ -97,7 +97,7 @@ export default function OnboardingForm({ categories, initialSelectedCategoryIds 
 
     setIsLoading(false);
     await revalidateSavedAndOnboardingPages(); // Revalidate paths to force data re-fetch
-    router.push('/saved');
+    router.push('/feed');
   };
 
   return (
