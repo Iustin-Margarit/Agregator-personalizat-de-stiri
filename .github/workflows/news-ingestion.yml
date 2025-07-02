@@ -1,0 +1,50 @@
+name: News Ingestion Scheduler
+
+on:
+  schedule:
+    # Run every 2 hours (at :00 minutes)
+    - cron: '0 */2 * * *'
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  trigger-ingestion:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger News Ingestion
+      run: |
+        echo "🔄 Triggering news ingestion at $(date)"
+        
+        # Call our Next.js API endpoint which will trigger the Supabase function
+        response=$(curl -s -w "\n%{http_code}" -X POST \
+          "${{ secrets.VERCEL_URL }}/api/trigger-ingestion" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -H "Content-Type: application/json")
+        
+        # Extract HTTP status code
+        http_code=$(echo "$response" | tail -n1)
+        body=$(echo "$response" | head -n -1)
+        
+        echo "HTTP Status: $http_code"
+        echo "Response: $body"
+        
+        # Check if request was successful
+        if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+          echo "✅ News ingestion triggered successfully"
+          
+          # Pretty print the JSON response if possible
+          if command -v jq &> /dev/null; then
+            echo "📄 Response details:"
+            echo "$body" | jq '.'
+          fi
+        else
+          echo "❌ News ingestion failed with status: $http_code"
+          echo "Response body: $body"
+          exit 1
+        fi
+
+    - name: Log Completion
+      run: |
+        echo "📰 News ingestion workflow completed at $(date)"
+        echo "⏰ Next scheduled run will be in 2 hours"

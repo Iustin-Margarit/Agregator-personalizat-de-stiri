@@ -21,7 +21,10 @@ export default async function Home() {
             <p className="text-lg">You are logged in.</p>
             <div className="flex justify-center gap-4">
               <Button asChild>
-                <Link href="/saved">Go to your Dashboard</Link>
+                <Link href="/feed">Go to Your News Feed</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/saved">Saved Articles</Link>
               </Button>
             </div>
           </div>
