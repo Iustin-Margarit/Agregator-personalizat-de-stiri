@@ -1,9 +1,38 @@
 import { createClient } from '@/lib/supabase/server';
-import ArticleCard from '@/components/custom/article-card';
+import VirtualizedFeedContent from '@/components/custom/virtualized-feed-content';
+import ArticleCardSkeleton from '@/components/custom/article-card-skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-export default async function FeedPage() {
+function FeedSkeleton() {
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Your News Feed</h1>
+          <p className="text-gray-600 mt-1">Latest articles from your preferred topics</p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/onboarding">Edit Topics</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/saved">Saved Articles</Link>
+          </Button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <ArticleCardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function FeedData() {
   const supabase = createClient();
 
   const {
@@ -52,7 +81,15 @@ export default async function FeedPage() {
   // First get source IDs for preferred categories
   const { data: sourcesData, error: sourcesError } = await supabase
     .from('sources')
-    .select('id, name, category_id, categories!category_id(name)')
+    .select(`
+      id, 
+      name, 
+      category_id,
+      categories (
+        id,
+        name
+      )
+    `)
     .in('category_id', preferredCategoryIds);
 
   if (sourcesError) {
@@ -89,7 +126,7 @@ export default async function FeedPage() {
     `)
     .in('source_id', sourceIds)
     .order('published_at', { ascending: false })
-    .limit(50);
+    .limit(20);
 
   if (articlesError) {
     console.error('Error fetching articles:', articlesError);
@@ -100,8 +137,17 @@ export default async function FeedPage() {
   const articlesWithCategories = (articlesData || []).map(article => {
     // Find the source info for this article
     const sourceInfo = sourcesData?.find(s => s.id === article.source_id);
-    const categories = sourceInfo?.categories;
-    const categoryName = Array.isArray(categories) ? categories[0]?.name : categories?.name || 'Unknown';
+    // Handle both object and array format for categories
+    const categories = sourceInfo?.categories as any;
+    let categoryName = 'Unknown';
+    
+    if (categories) {
+      if (Array.isArray(categories)) {
+        categoryName = categories[0]?.name || 'Unknown';
+      } else {
+        categoryName = categories.name || 'Unknown';
+      }
+    }
     
     return {
       ...article,
@@ -113,37 +159,20 @@ export default async function FeedPage() {
   const articles = articlesWithCategories;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Your News Feed</h1>
-          <p className="text-gray-600 mt-1">Latest articles from your preferred topics</p>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/onboarding">Edit Topics</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/saved">Saved Articles</Link>
-          </Button>
-        </div>
-      </div>
-      
-      {articles.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">
-          <p className="text-lg">No articles found for your preferred topics.</p>
-          <p className="mt-2">Try selecting different topics or check back later!</p>
-          <Button asChild className="mt-4">
-            <Link href="/onboarding">Update Your Topics</Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} userId={user.id} />
-          ))}
-        </div>
-      )}
-    </div>
+    <VirtualizedFeedContent 
+      initialArticles={articles} 
+      userId={user.id} 
+      preferredCategoryIds={preferredCategoryIds}
+      sourceIds={sourceIds}
+      sourcesData={sourcesData}
+    />
+  );
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedData />
+    </Suspense>
   );
 }
