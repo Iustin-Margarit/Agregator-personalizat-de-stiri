@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { analytics } from '@/lib/analytics';
 
 interface ArticleCardProps {
   article: {
@@ -21,27 +22,97 @@ interface ArticleCardProps {
 
 export default function ArticleCard({ article, userId }: ArticleCardProps) {
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    async function checkSavedStatus() {
+    async function checkSavedAndLikedStatus() {
       if (!userId || !article.id) return;
 
-      const { data, error } = await supabase
+      // Check saved status
+      const { data: savedData, error: savedError } = await supabase
         .from('saved_articles')
         .select('*')
         .eq('user_id', userId)
         .eq('article_id', article.id)
         .single();
       
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-        console.error('Error checking saved status:', error);
+      if (savedError && savedError.code !== 'PGRST116') { // PGRST116 means no rows found
+        console.error('Error checking saved status:', savedError);
       }
-      setIsSaved(!!data);
+      setIsSaved(!!savedData);
+
+      // Check liked status
+      const { data: likedData, error: likedError } = await supabase
+        .from('likes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('article_id', article.id)
+        .single();
+      
+      if (likedError && likedError.code !== 'PGRST116') { // PGRST116 means no rows found
+        console.error('Error checking liked status:', likedError);
+      }
+      setIsLiked(!!likedData);
     }
 
-    checkSavedStatus();
+    checkSavedAndLikedStatus();
   }, [article.id, userId, supabase]);
+
+  const handleLikeToggle = async () => {
+    if (!userId) {
+      alert('You need to be logged in to like articles.');
+      return;
+    }
+
+    // Optimistic UI update
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+
+    if (isLiked) {
+      // Unlike article
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('article_id', article.id);
+
+      if (error) {
+        console.error('Error unliking article:', error);
+        // Revert optimistic update on error
+        setIsLiked(true);
+      } else {
+        // Track analytics for unlike
+        await analytics.trackLikeEvent(
+          userId, 
+          article.id, 
+          false, 
+          article.category, 
+          article.source
+        );
+      }
+    } else {
+      // Like article
+      const { error } = await supabase
+        .from('likes')
+        .insert({ user_id: userId, article_id: article.id });
+
+      if (error) {
+        console.error('Error liking article:', error);
+        // Revert optimistic update on error
+        setIsLiked(false);
+      } else {
+        // Track analytics for like
+        await analytics.trackLikeEvent(
+          userId, 
+          article.id, 
+          true, 
+          article.category, 
+          article.source
+        );
+      }
+    }
+  };
 
   const handleSaveToggle = async () => {
     if (!userId) {
@@ -101,9 +172,14 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
         <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
           Read More
         </a>
-        <Button variant="ghost" size="icon" onClick={handleSaveToggle} disabled={!userId}>
-          {isSaved ? <BookmarkCheck className="h-5 w-5 text-blue-500" /> : <Bookmark className="h-5 w-5" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={handleLikeToggle} disabled={!userId}>
+            <Heart className={`h-5 w-5 ${isLiked ? 'text-red-500 fill-current' : ''}`} />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleSaveToggle} disabled={!userId}>
+            {isSaved ? <BookmarkCheck className="h-5 w-5 text-blue-500" /> : <Bookmark className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
     </div>
   );
