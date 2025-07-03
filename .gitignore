@@ -74,3 +74,13 @@ wheels/
 .installed.cfg
 *.egg
 
+# Supabase local development state
+supabase/.branches/
+supabase/.temp/
+
+# Supabase Edge Function dependencies
+supabase/functions/**/node_modules/
+supabase/functions/**/*.npmrc
+
+# General log files
+*.log
