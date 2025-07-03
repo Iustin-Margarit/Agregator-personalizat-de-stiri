@@ -119,35 +119,41 @@ function parseRSSFeed(xmlText: string): RSSItem[] {
       try {
         const item: RSSItem = {}
         
-        // Extract title with better error handling
-        const titleMatch = itemXml.match(/<(?:title|atom:title)[^>]*>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/(?:title|atom:title)>/i)
+        // Extract title with better error handling and multi-line support
+        const titleMatch = itemXml.match(/<(?:title|atom:title)[^>]*>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/(?:title|atom:title)>/i)
         if (titleMatch) {
-          const title = (titleMatch[1] || titleMatch[2])?.trim()
+          let title = (titleMatch[1] || titleMatch[2])?.trim()
           if (title && title.length > 0) {
+            // Clean up whitespace and newlines
+            title = title.replace(/\s+/g, ' ').trim()
             item.title = decodeHtmlEntities(title)
           }
         }
         
-        // Extract description with multiple possible tags
-        const descMatch = itemXml.match(/<(?:description|summary|content|atom:summary)[^>]*>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/(?:description|summary|content|atom:summary)>/i)
+        // Extract description with multiple possible tags and multi-line support
+        const descMatch = itemXml.match(/<(?:description|summary|content|atom:summary)[^>]*>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/(?:description|summary|content|atom:summary)>/i)
         if (descMatch) {
-          const desc = (descMatch[1] || descMatch[2])?.trim()
+          let desc = (descMatch[1] || descMatch[2])?.trim()
           if (desc && desc.length > 0) {
+            // Clean up HTML tags and normalize whitespace
+            desc = desc.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
             item.description = decodeHtmlEntities(desc)
           }
         }
         
-        // Extract link with multiple possible formats including CDATA
-        const linkMatch = itemXml.match(/<(?:link|atom:link)[^>]*(?:href="([^"]*)"[^>]*>|>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/(?:link|atom:link)>)/i)
+        // Extract link with multiple possible formats including CDATA and multi-line support
+        const linkMatch = itemXml.match(/<(?:link|atom:link)[^>]*(?:href="([^"]*)"[^>]*>|>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/(?:link|atom:link)>)/i)
         if (linkMatch) {
-          const link = (linkMatch[1] || linkMatch[2] || linkMatch[3])?.trim()
+          let link = (linkMatch[1] || linkMatch[2] || linkMatch[3])?.trim()
           if (link && link.length > 0) {
+            // Remove any extra whitespace/newlines from URL
+            link = link.replace(/\s+/g, '').trim()
             item.link = link
           }
         }
         
-        // Extract pubDate with multiple possible formats
-        const dateMatch = itemXml.match(/<(?:pubDate|published|atom:published|dc:date|lastBuildDate)[^>]*>(.*?)<\/(?:pubDate|published|atom:published|dc:date|lastBuildDate)>/i)
+        // Extract pubDate with multiple possible formats and multi-line support
+        const dateMatch = itemXml.match(/<(?:pubDate|published|atom:published|dc:date|lastBuildDate)[^>]*>\s*([\s\S]*?)\s*<\/(?:pubDate|published|atom:published|dc:date|lastBuildDate)>/i)
         if (dateMatch) {
           const date = dateMatch[1]?.trim()
           if (date && date.length > 0) {
@@ -155,8 +161,8 @@ function parseRSSFeed(xmlText: string): RSSItem[] {
           }
         }
         
-        // Extract content:encoded
-        const contentMatch = itemXml.match(/<content:encoded[^>]*>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/content:encoded>/i)
+        // Extract content:encoded with multi-line support
+        const contentMatch = itemXml.match(/<content:encoded[^>]*>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/content:encoded>/i)
         if (contentMatch) {
           const content = (contentMatch[1] || contentMatch[2])?.trim()
           if (content && content.length > 0) {
@@ -164,11 +170,13 @@ function parseRSSFeed(xmlText: string): RSSItem[] {
           }
         }
         
-        // Extract author with multiple possible tags
-        const authorMatch = itemXml.match(/<(?:dc:creator|author|managingEditor|atom:author)[^>]*>(?:<name>)?(.*?)(?:<\/name>)?<\/(?:dc:creator|author|managingEditor|atom:author)>/i)
+        // Extract author with multiple possible tags and multi-line support
+        const authorMatch = itemXml.match(/<(?:dc:creator|author|managingEditor|atom:author)[^>]*>\s*(?:<name>)?([\s\S]*?)(?:<\/name>)?\s*<\/(?:dc:creator|author|managingEditor|atom:author)>/i)
         if (authorMatch) {
-          const author = authorMatch[1]?.trim()
+          let author = authorMatch[1]?.trim()
           if (author && author.length > 0) {
+            // Clean up whitespace
+            author = author.replace(/\s+/g, ' ').trim()
             item.author = author
           }
         }
