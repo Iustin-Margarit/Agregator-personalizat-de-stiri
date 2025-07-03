@@ -30,3 +30,10 @@
     5. Project dependencies were reinstalled using `npm install`.
     6. The Next.js development server was restarted using `npm run dev`.
     This process ensured a fresh build and proper serving of all necessary JavaScript assets, resolving the login functionality.
+
+## 4. GitHub Actions Workflow Fails to Access Secrets
+
+- **Symptom:** The "News Ingestion Scheduler" GitHub Actions workflow fails with an error message indicating that secrets (`VERCEL_URL`, `CRON_SECRET`) are not being accessed correctly. The logs show `null` values for the secrets.
+- **Date:** 2025-07-03
+- **Root Cause:** The version of the `.github/workflows/news-ingestion.yml` file on the GitHub repository was outdated and used an incorrect syntax (`format(...)`) to access secrets. The correct syntax for GitHub Actions is `${{ secrets.SECRET_NAME }}`.
+- **Solution:** The local `.github/workflows/news-ingestion.yml` file was updated to use the correct syntax. The user must commit and push this corrected file to the GitHub repository to resolve the issue.

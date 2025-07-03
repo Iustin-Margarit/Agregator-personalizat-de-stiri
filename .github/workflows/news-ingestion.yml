@@ -9,6 +9,8 @@ on:
 
 jobs:
   trigger-ingestion:
+    # Only run on the main branch to prevent accidental production changes
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
