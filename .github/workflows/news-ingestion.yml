@@ -31,12 +31,18 @@ jobs:
           exit 1
         fi
         
-        # Call the Supabase Edge Function directly
-        response=$(curl --fail -s -w "\n%{http_code}" -X POST \
+        # Call the Supabase Edge Function directly with detailed logging
+        echo "🌐 Calling: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
+        
+        response=$(curl -s -w "\n%{http_code}" -X POST \
           "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Content-Type: application/json" \
-          -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}')
+          -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}') || {
+          echo "❌ Curl command failed with exit code $?"
+          echo "This usually means network error or invalid URL"
+          exit 1
+        }
         
         # Extract HTTP status code
         http_code=$(echo "$response" | tail -n1)
