@@ -37,9 +37,23 @@ export default async function SavedPage() {
   let articles: any[] = [];
 
   if (savedArticleIds.length > 0) {
-    const { data: savedArticles, error: savedError } = await supabase
+    const { data: savedArticlesWithDetails, error: savedError } = await supabase
       .from('articles')
-      .select('id, title, summary, url, image_url, source, published_at')
+      .select(`
+        id,
+        title,
+        summary,
+        url,
+        image_url,
+        published_at,
+        source_id,
+        sources (
+          name,
+          categories (
+            name
+          )
+        )
+      `)
       .in('id', savedArticleIds)
       .order('published_at', { ascending: false });
 
@@ -47,7 +61,23 @@ export default async function SavedPage() {
       console.error('Error fetching saved articles:', savedError);
       return <div>Error loading saved articles.</div>;
     }
-    articles = savedArticles || [];
+
+    // Map the data to the format expected by ArticleCard
+    articles = (savedArticlesWithDetails || []).map(article => {
+      const sourceInfo = article.sources as any;
+      const categoryName = sourceInfo?.categories?.name || 'General';
+      
+      return {
+        id: article.id,
+        title: article.title,
+        summary: article.summary,
+        url: article.url,
+        image_url: article.image_url,
+        published_at: article.published_at,
+        source: sourceInfo?.name || 'Unknown Source',
+        category: categoryName,
+      };
+    });
   }
 
   return (

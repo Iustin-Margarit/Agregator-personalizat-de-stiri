@@ -172,7 +172,7 @@ export default function VirtualizedFeedContent({
         return {
           ...article,
           category: categoryName,
-          sourceName: sourceInfo?.name || 'Unknown Source'
+          source: sourceInfo?.name || 'Unknown Source'
         };
       });
 
@@ -324,7 +324,7 @@ export default function VirtualizedFeedContent({
         return {
           ...article,
           category: categoryName,
-          sourceName: sourceInfo?.name || 'Unknown Source'
+          source: sourceInfo?.name || 'Unknown Source'
         };
       });
 

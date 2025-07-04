@@ -115,12 +115,11 @@ async function FeedData() {
   const { data: articlesData, error: articlesError } = await supabase
     .from('articles')
     .select(`
-      id, 
-      title, 
-      summary, 
-      url, 
-      image_url, 
-      source, 
+      id,
+      title,
+      summary,
+      url,
+      image_url,
       published_at,
       source_id
     `)
@@ -152,7 +151,7 @@ async function FeedData() {
     return {
       ...article,
       category: categoryName,
-      sourceName: sourceInfo?.name || 'Unknown Source'
+      source: sourceInfo?.name || 'Unknown Source'
     };
   });
 

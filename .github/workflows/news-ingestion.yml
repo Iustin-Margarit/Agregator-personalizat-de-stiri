@@ -21,21 +21,22 @@ jobs:
 
         echo "🔄 Triggering news ingestion at $(date)"
 
-        if [ -z "${{ secrets.VERCEL_URL }}" ]; then
-          echo "❌ Error: VERCEL_URL secret is not set."
+        if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+          echo "❌ Error: SUPABASE_URL secret is not set."
           exit 1
         fi
 
-        if [ -z "${{ secrets.CRON_SECRET }}" ]; then
-          echo "❌ Error: CRON_SECRET secret is not set."
+        if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+          echo "❌ Error: SUPABASE_ANON_KEY secret is not set."
           exit 1
         fi
         
-        # Call our Next.js API endpoint which will trigger the Supabase function
+        # Call the Supabase Edge Function directly
         response=$(curl --fail -s -w "\n%{http_code}" -X POST \
-          "${{ secrets.VERCEL_URL }}/api/trigger-ingestion" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -H "Content-Type: application/json")
+          "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}')
         
         # Extract HTTP status code
         http_code=$(echo "$response" | tail -n1)
