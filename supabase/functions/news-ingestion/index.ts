@@ -387,6 +387,9 @@ function processArticle(item: RSSItem, sourceId: string): Article | null {
 }
 
 serve(async (req: Request) => {
+  const startTime = Date.now()
+  const MAX_EXECUTION_TIME = 4 * 60 * 1000 // 4 minutes (leave 1 minute buffer for 5min timeout)
+  
   try {
     // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -405,25 +408,58 @@ serve(async (req: Request) => {
 
     console.log("Starting news ingestion process...")
     
-    // Get all active sources from the database
-    const { data: sources, error: sourcesError } = await supabase
+    // Parse request body to check for batch parameters
+    let requestBody: any = {}
+    try {
+      const bodyText = await req.text()
+      if (bodyText) {
+        requestBody = JSON.parse(bodyText)
+      }
+    } catch (parseError) {
+      console.log('No valid JSON body, using defaults')
+    }
+    
+    const batchSize = requestBody.batch_size || 3 // Process 3 sources at a time by default
+    const batchOffset = requestBody.batch_offset || 0 // Start from beginning by default
+    
+    // Get active sources with pagination for batch processing
+    const { data: allSources, error: sourcesError } = await supabase
       .from('sources')
       .select('*')
       .eq('is_active', true)
+      .order('last_fetched_at', { ascending: true, nullsFirst: true }) // Process oldest first
     
     if (sourcesError) {
       console.error('Error fetching sources:', sourcesError)
       throw sourcesError
     }
     
-    console.log(`Found ${sources?.length || 0} active sources`)
+    console.log(`Found ${allSources?.length || 0} total active sources`)
+    
+    // Get the batch of sources to process
+    const sources = (allSources || []).slice(batchOffset, batchOffset + batchSize)
+    console.log(`Processing batch: ${batchOffset + 1}-${batchOffset + sources.length} of ${allSources?.length || 0} sources`)
     
     let totalProcessed = 0
     let totalInserted = 0
     const errors: string[] = []
+    let timeoutReached = false
     
-    // Process each source
-    for (const source of sources || []) {
+    // Process each source in the batch
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i]
+      
+      // Check if we're approaching timeout
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = MAX_EXECUTION_TIME - elapsedTime
+      
+      if (remainingTime < 60000) { // Less than 1 minute remaining
+        console.log(`Timeout approaching (${remainingTime}ms remaining), stopping batch processing`)
+        timeoutReached = true
+        break
+      }
+      
+      console.log(`Processing source ${i + 1}/${sources.length}: ${source.name} (${remainingTime}ms remaining)`)
       try {
         console.log(`Processing source: ${source.name} (${source.rss_url})`)
         
@@ -672,20 +708,35 @@ serve(async (req: Request) => {
       }
     }
     
+    // Determine if there are more batches to process
+    const totalSources = allSources?.length || 0
+    const nextBatchOffset = batchOffset + batchSize
+    const hasMoreBatches = nextBatchOffset < totalSources && !timeoutReached
+    
     const result = {
       success: true,
       processed: totalProcessed,
       inserted: totalInserted,
-      sources_processed: sources?.length || 0,
+      sources_processed: sources.length,
+      total_sources: totalSources,
+      batch_info: {
+        batch_size: batchSize,
+        batch_offset: batchOffset,
+        processed_in_batch: sources.length,
+        has_more_batches: hasMoreBatches,
+        next_batch_offset: hasMoreBatches ? nextBatchOffset : null,
+        timeout_reached: timeoutReached
+      },
       errors: errors.length > 0 ? errors : undefined,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      execution_time_ms: Date.now() - startTime
     }
     
-    console.log('News ingestion completed:', result)
+    console.log('News ingestion batch completed:', result)
     
     return new Response(
       JSON.stringify(result),
-      { 
+      {
         headers: { "Content-Type": "application/json" },
         status: 200
       }

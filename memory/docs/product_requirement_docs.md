@@ -93,6 +93,9 @@
     - Support keyboard navigation and screen readers.
 - **Localization:**
     - UI text must be abstracted for future translation (initial language is English).
+- **Data Retention:**
+    - To ensure the feed remains fresh and to manage storage, articles older than 30 days will be automatically deleted.
+    - Articles saved by a user are exempt from this policy and will be retained indefinitely in the user's saved list.
 
 ---
 

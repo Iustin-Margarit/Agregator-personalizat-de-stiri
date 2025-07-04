@@ -47,20 +47,12 @@ export default function FeedContent({
     
     try {
       const { data: moreArticlesData, error } = await supabase
-        .from('articles')
-        .select(`
-          id, 
-          title, 
-          summary, 
-          url, 
-          image_url, 
-          source, 
-          published_at,
-          source_id
-        `)
-        .in('source_id', sourceIds)
-        .order('published_at', { ascending: false })
-        .range(offset, offset + ARTICLES_PER_PAGE - 1);
+        .rpc('get_user_visible_articles', {
+          p_user_id: userId,
+          p_source_ids: sourceIds,
+          p_limit: ARTICLES_PER_PAGE,
+          p_offset: offset
+        });
 
       if (error) {
         console.error('Error loading more articles:', error);
@@ -73,14 +65,24 @@ export default function FeedContent({
       }
 
       // Map articles to include category name from source data
-      const moreArticlesWithCategories = moreArticlesData.map(article => {
+      const moreArticlesWithCategories = moreArticlesData.map((article: any) => {
         const sourceInfo = sourcesData?.find(s => s.id === article.source_id);
-        const categoryName = sourceInfo?.categories?.[0]?.name || 'Unknown';
+        // Handle both object and array format for categories
+        const categories = sourceInfo?.categories as any;
+        let categoryName = 'Unknown';
+        
+        if (categories) {
+          if (Array.isArray(categories)) {
+            categoryName = categories[0]?.name || 'Unknown';
+          } else {
+            categoryName = categories.name || 'Unknown';
+          }
+        }
         
         return {
           ...article,
           category: categoryName,
-          sourceName: sourceInfo?.name || 'Unknown Source'
+          source: sourceInfo?.name || 'Unknown Source'
         };
       });
 
@@ -95,7 +97,7 @@ export default function FeedContent({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, offset, sourceIds, sourcesData, supabase]);
+  }, [isLoadingMore, hasMore, offset, sourceIds, sourcesData, supabase, userId]);
 
   // Infinite scroll effect
   useEffect(() => {

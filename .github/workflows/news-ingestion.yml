@@ -21,48 +21,77 @@ jobs:
 
         echo "🔄 Triggering news ingestion at $(date)"
 
-        if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-          echo "❌ Error: SUPABASE_URL secret is not set."
+        if [ -z "${{ secrets.VERCEL_URL }}" ]; then
+          echo "❌ Error: VERCEL_URL secret is not set."
           exit 1
         fi
 
-        if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-          echo "❌ Error: SUPABASE_ANON_KEY secret is not set."
+        if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+          echo "❌ Error: CRON_SECRET secret is not set."
           exit 1
         fi
         
-        # Call the Supabase Edge Function directly with detailed logging
-        echo "🌐 Calling: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
-        
-        response=$(curl -s -w "\n%{http_code}" -X POST \
-          "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Content-Type: application/json" \
-          -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}') || {
-          echo "❌ Curl command failed with exit code $?"
-          echo "This usually means network error or invalid URL"
-          exit 1
-        }
+        # Call our Next.js API endpoint which will trigger the Supabase function
+        # Increase timeout to 10 minutes for batch processing
+        response=$(curl --max-time 600 --fail -s -w "\n%{http_code}" -X POST \
+          "${{ secrets.VERCEL_URL }}/api/trigger-ingestion" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -H "Content-Type: application/json")
         
         # Extract HTTP status code
         http_code=$(echo "$response" | tail -n1)
         body=$(echo "$response" | head -n -1)
         
+        echo "🌐 Calling: ${{ secrets.VERCEL_URL }}/api/trigger-ingestion"
         echo "HTTP Status: $http_code"
-        echo "Response: $body"
         
         # Check if request was successful
         if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-          echo "✅ News ingestion triggered successfully"
+          echo "✅ News ingestion completed successfully"
           
-          # Pretty print the JSON response if possible
+          # Parse and display batch processing results
           if command -v jq &> /dev/null && [ -n "$body" ]; then
-            echo "📄 Response details:"
-            echo "$body" | jq '.' || echo "Response body is not valid JSON."
+            echo "📊 Ingestion Summary:"
+            
+            # Extract key metrics
+            total_processed=$(echo "$body" | jq -r '.summary.total_processed // 0')
+            total_inserted=$(echo "$body" | jq -r '.summary.total_inserted // 0')
+            batches_executed=$(echo "$body" | jq -r '.summary.batches_executed // 0')
+            execution_time=$(echo "$body" | jq -r '.summary.execution_time_seconds // 0')
+            
+            echo "  📰 Articles processed: $total_processed"
+            echo "  ➕ New articles added: $total_inserted"
+            echo "  📦 Batches executed: $batches_executed"
+            echo "  ⏱️  Execution time: ${execution_time}s"
+            
+            # Check for errors
+            errors=$(echo "$body" | jq -r '.errors // empty | length')
+            if [ "$errors" -gt 0 ] 2>/dev/null; then
+              echo "⚠️  Warnings/Errors encountered:"
+              echo "$body" | jq -r '.errors[]' | head -10 | sed 's/^/    /'
+              if [ "$errors" -gt 10 ]; then
+                echo "    ... and $((errors - 10)) more errors (check logs for details)"
+              fi
+            fi
+            
+            # Show full response in debug mode
+            echo "📄 Full Response:"
+            echo "$body" | jq '.' || echo "$body"
+          else
+            echo "Response: $body"
           fi
         else
           echo "❌ News ingestion failed with status: $http_code"
           echo "Response body: $body"
+          
+          # Try to extract error details if JSON
+          if command -v jq &> /dev/null && [ -n "$body" ]; then
+            error_details=$(echo "$body" | jq -r '.details // .error // empty')
+            if [ -n "$error_details" ]; then
+              echo "Error details: $error_details"
+            fi
+          fi
+          
           exit 1
         fi
 

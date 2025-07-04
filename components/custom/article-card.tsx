@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { Bookmark, BookmarkCheck, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/toast';
 import { analytics } from '@/lib/analytics';
+import SavedArticlesLimitModal from './saved-articles-limit-modal';
 
 interface ArticleCardProps {
   article: {
@@ -23,7 +25,9 @@ interface ArticleCardProps {
 export default function ArticleCard({ article, userId }: ArticleCardProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const supabase = createClient();
+  const { showToast } = useToast();
 
   useEffect(() => {
     async function checkSavedAndLikedStatus() {
@@ -61,7 +65,11 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
 
   const handleLikeToggle = async () => {
     if (!userId) {
-      alert('You need to be logged in to like articles.');
+      showToast({
+        type: 'warning',
+        title: 'Login Required',
+        message: 'You need to be logged in to like articles.'
+      });
       return;
     }
 
@@ -116,12 +124,16 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
 
   const handleSaveToggle = async () => {
     if (!userId) {
-      alert('You need to be logged in to save articles.');
+      showToast({
+        type: 'warning',
+        title: 'Login Required',
+        message: 'You need to be logged in to save articles.'
+      });
       return;
     }
 
     if (isSaved) {
-      // Unsave article
+      // Unsave article (unchanged)
       const { error } = await supabase
         .from('saved_articles')
         .delete()
@@ -130,57 +142,115 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
 
       if (error) {
         console.error('Error unsaving article:', error);
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to unsave article. Please try again.'
+        });
       } else {
         setIsSaved(false);
+        showToast({
+          type: 'success',
+          title: 'Article Unsaved',
+          message: 'Article removed from your saved list.'
+        });
       }
     } else {
-      // Save article
-      const { error } = await supabase
-        .from('saved_articles')
-        .insert({ user_id: userId, article_id: article.id });
+      // Save article with limit check
+      const { data, error } = await supabase
+        .rpc('save_article_with_limit_check', {
+          user_uuid: userId,
+          article_uuid: article.id
+        });
 
       if (error) {
         console.error('Error saving article:', error);
-      } else {
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to save article. Please try again.'
+        });
+        return;
+      }
+
+      const result = data?.[0];
+      if (result?.success) {
         setIsSaved(true);
+        showToast({
+          type: 'success',
+          title: 'Article Saved',
+          message: result.message
+        });
+      } else {
+        // Show limit reached message with beautiful modal
+        if (result?.limit_reached) {
+          showToast({
+            type: 'warning',
+            title: 'Saved Articles Limit Reached',
+            message: result.message
+          });
+          // Show the beautiful limit management modal
+          setShowLimitModal(true);
+        } else {
+          showToast({
+            type: 'info',
+            title: 'Info',
+            message: result?.message || 'Unable to save article.'
+          });
+        }
       }
     }
   };
 
+  const handleArticleRemoved = () => {
+    // This will be called when an article is removed from the modal
+    // We can try to save the current article again
+    handleSaveToggle();
+  };
+
   return (
-    <div className="border rounded-lg p-4 flex flex-col">
-      {article.image_url && (
-        <img src={article.image_url} alt={article.title} className="w-full h-48 object-cover rounded-md mb-4" />
-      )}
+    <>
+      <SavedArticlesLimitModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        userId={userId || ''}
+        onArticleRemoved={handleArticleRemoved}
+      />
       
-      {/* Category badge */}
-      {article.category && (
-        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 w-fit">
-          {article.category}
-        </span>
-      )}
-      
-      <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
-      {article.source && <p className="text-sm text-gray-500 mb-1">{article.source}</p>}
-      {article.published_at && (
-        <p className="text-sm text-gray-500 mb-2">
-          {new Date(article.published_at).toLocaleDateString()}
-        </p>
-      )}
-      <p className="text-gray-700 flex-grow mb-4">{article.summary}</p>
-      <div className="flex items-center justify-between mt-auto">
-        <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-          Read More
-        </a>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={handleLikeToggle} disabled={!userId}>
-            <Heart className={`h-5 w-5 ${isLiked ? 'text-red-500 fill-current' : ''}`} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleSaveToggle} disabled={!userId}>
-            {isSaved ? <BookmarkCheck className="h-5 w-5 text-blue-500" /> : <Bookmark className="h-5 w-5" />}
-          </Button>
+        <div className="border rounded-lg p-4 flex flex-col">
+          {article.image_url && (
+            <img src={article.image_url} alt={article.title} className="w-full h-48 object-cover rounded-md mb-4" />
+          )}
+          
+          {/* Category badge */}
+          {article.category && (
+            <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 w-fit">
+              {article.category}
+            </span>
+          )}
+          
+          <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
+          {article.source && <p className="text-sm text-gray-500 mb-1">{article.source}</p>}
+          {article.published_at && (
+            <p className="text-sm text-gray-500 mb-2">
+              {new Date(article.published_at).toLocaleDateString()}
+            </p>
+          )}
+          <p className="text-gray-700 flex-grow mb-4">{article.summary}</p>
+          <div className="flex items-center justify-between mt-auto">
+            <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+              Read More
+            </a>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={handleLikeToggle} disabled={!userId}>
+                <Heart className={`h-5 w-5 ${isLiked ? 'text-red-500 fill-current' : ''}`} />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleSaveToggle} disabled={!userId}>
+                {isSaved ? <BookmarkCheck className="h-5 w-5 text-blue-500" /> : <Bookmark className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </>
   );
 }

@@ -1,11 +1,11 @@
 # Active Development Context
 
 ## Current Work Focus:
-- **Task 3.4 Complete:** Successfully implemented the complete liking functionality including analytics tracking.
-- **Automated Ingestion Complete:** Implemented GitHub Actions workflow for automated news ingestion every 2 hours.
-- **Full User Engagement System:** The app now supports both saving and liking articles with comprehensive analytics.
-- **Production-Ready Scheduling:** Automated news ingestion system ready for deployment with proper monitoring and error handling.
-- **Ready for Next Features:** With complete engagement functionality and automated content updates, ready to move to article detail views or other features.
+- **All Core MVP Features Complete:** Tasks 3.5.5, 3.5.6, and 3.5.7 successfully completed (2025-07-04)
+- **Saved Articles Organization System:** Full implementation with folders, tags, bulk operations, and enhanced management interface
+- **Custom Modal & Notification System:** Replaced all native browser prompts with professional in-website modals and toast notifications
+- **Production Ready:** Core application features complete, ready for deployment following the deployment checklist in `tasks_plan.md`
+- **Next Priority:** Production deployment with automated news ingestion configuration (critical for user experience)
 
 ## Active Decisions and Considerations:
 - **Source Filtering Logic:** Implemented source filtering that works in combination with category, search, and date filters
@@ -67,9 +67,48 @@
   - **Root Cause:** Default Supabase ports conflicted with Windows reserved port ranges
   - **Solution:** Updated `supabase/config.toml` to use alternative ports (API: 58321, DB: 58322, Studio: 58323)
   - **Environment:** Ensured Docker Desktop compatibility and stable local development setup
+- **Added Automated Data Retention Policy:** Implemented a daily database job (`pg_cron`) to automatically delete articles older than 30 days.
+  - **Benefit:** Ensures data relevance, manages database growth, and improves overall system performance by keeping the `articles` table lean.
+  - **Files:** `supabase/migrations/20250704130000_add_article_cleanup_job.sql`
+- **Completed Tasks 3.5.5 & 3.5.6 (2025-07-04):** Implemented comprehensive saved articles organization and bulk actions
+  - **Database Schema:** Created `saved_folders`, `saved_tags`, and `saved_article_tags` tables with full RLS policies
+  - **Extended saved_articles:** Added `folder_id`, `is_read`, `notes`, and `updated_at` columns
+  - **SavedArticlesManager Component:** Built comprehensive management interface with sidebar organization
+  - **EnhancedArticleCard Component:** Enhanced article cards with organization controls and visual indicators
+  - **Folder Management:** Create/edit folders with color customization and article assignment
+  - **Tag System:** Create/manage tags with color coding and many-to-many article relationships
+  - **Bulk Operations:** Select multiple articles, mark as read/unread, move to folders, delete with confirmation
+  - **Filtering:** Filter saved articles by folder, tags, and read status
+  - **Migration Applied:** `20250704190000_add_saved_articles_organization.sql` successfully deployed
+  - **User Experience:** Intuitive organization system with real-time state synchronization
+- **Completed Task 3.5.7 (2025-07-04):** Replaced all native browser prompts with custom in-website modals and notifications
+  - **Custom Confirmation Modal:** Built [`ConfirmationModal`](components/ui/confirmation-modal.tsx) component with:
+    - Professional design matching site aesthetics
+    - Smooth CSS transitions and animations
+    - Backdrop click and Escape key handling
+    - Support for destructive and default variants
+    - Proper accessibility with focus management
+  - **Toast Notification System:** Implemented comprehensive toast system with:
+    - [`Toast`](components/ui/toast.tsx) provider pattern for global access
+    - Auto-dismiss functionality with configurable duration
+    - Multiple types: success, error, warning, info
+    - Manual close capability with X button
+    - Proper positioning and z-index management
+  - **Component Updates:** Updated all components to use new system:
+    - [`SavedArticlesManager`](components/custom/saved-articles-manager.tsx): Replaced 3 `confirm()` calls and 8 `alert()` calls
+    - [`EnhancedArticleCard`](components/custom/enhanced-article-card.tsx): Replaced `alert()` with toast notifications
+    - [`ArticleCard`](components/custom/article-card.tsx): Added toast notifications for login requirements
+  - **Root Integration:** Added [`ToastProvider`](app/layout.tsx) wrapper at root level for global toast access
+  - **User Experience Improvements:**
+    - Eliminated jarring native browser dialogs
+    - Consistent design system integration
+    - Better accessibility and keyboard navigation
+    - Professional appearance with smooth animations
+    - Contextual messaging with appropriate icons and colors
 
 ## Next Steps:
-- **Ready for Production Deployment:** All core features complete, automated scheduling implemented and documented
-- **Deployment Critical Path:** Follow `DEPLOYMENT.md` and `memory/tasks/tasks_plan.md` deployment checklist
-- **Post-Deployment:** Begin Task 3.6 (Article Detail View) or other advanced features
-- **Monitoring:** Ensure automated news ingestion runs successfully every 2 hours after deployment
+- **IMMEDIATE PRIORITY:** Production deployment following the deployment checklist in `tasks_plan.md`
+- **CRITICAL:** Configure automated news ingestion (GitHub Actions + Vercel environment variables)
+- **Post-Deployment Validation:** Verify fresh articles appear every 2 hours, test all user flows
+- **Future Development:** After successful deployment, begin Task 3.6 (Article Detail View) or Epic 4 (Social Features)
+- **Monitoring:** Set up production monitoring and alerts for automated ingestion failures

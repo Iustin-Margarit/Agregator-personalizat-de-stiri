@@ -111,21 +111,14 @@ async function FeedData() {
     );
   }
 
-  // Now get articles from those sources
+  // Now get user-visible articles using the new function
   const { data: articlesData, error: articlesError } = await supabase
-    .from('articles')
-    .select(`
-      id,
-      title,
-      summary,
-      url,
-      image_url,
-      published_at,
-      source_id
-    `)
-    .in('source_id', sourceIds)
-    .order('published_at', { ascending: false })
-    .limit(20);
+    .rpc('get_user_visible_articles', {
+      p_user_id: user.id,
+      p_source_ids: sourceIds,
+      p_limit: 20,
+      p_offset: 0
+    });
 
   if (articlesError) {
     console.error('Error fetching articles:', articlesError);
@@ -133,7 +126,7 @@ async function FeedData() {
   }
 
   // Map articles to include category name from source data
-  const articlesWithCategories = (articlesData || []).map(article => {
+  const articlesWithCategories = (articlesData || []).map((article: any) => {
     // Find the source info for this article
     const sourceInfo = sourcesData?.find(s => s.id === article.source_id);
     // Handle both object and array format for categories
