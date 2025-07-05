@@ -2,9 +2,10 @@
 
 ## Current Work Focus:
 - **All Core MVP Features Complete:** Tasks 3.5.5, 3.5.6, and 3.5.7 successfully completed (2025-07-04)
+- **SEO Enhancement Complete:** Task 3.6.5 successfully completed (2025-07-05) - Slug-based URLs implemented
 - **Saved Articles Organization System:** Full implementation with folders, tags, bulk operations, and enhanced management interface
 - **Custom Modal & Notification System:** Replaced all native browser prompts with professional in-website modals and toast notifications
-- **Production Ready:** Core application features complete, ready for deployment following the deployment checklist in `tasks_plan.md`
+- **Production Ready:** Core application features complete with SEO optimization, ready for deployment following the deployment checklist in `tasks_plan.md`
 - **Next Priority:** Production deployment with automated news ingestion configuration (critical for user experience)
 
 ## Active Decisions and Considerations:
@@ -106,9 +107,36 @@
     - Professional appearance with smooth animations
     - Contextual messaging with appropriate icons and colors
 
+## Recent Changes (2025-07-05):
+- **Completed Task 3.6.1 (Article Detail Page):** Implemented comprehensive article detail view at `/article/[id]`
+  - **Full Content Display:** Professional article layout with hero image, category badges, meta information, and reading time calculation
+  - **Article Interactions:** Created [`ArticleInteractions`](components/custom/article-interactions.tsx) component with like, save, and share functionality
+  - **Enhanced Navigation:** Added back navigation to feed and clickable article titles in [`ArticleCard`](components/custom/article-card.tsx)
+  - **Professional Design:** Responsive layout with proper typography, spacing, and visual hierarchy
+  - **Reading Experience:** Calculated reading time, formatted publication dates, and clear call-to-action for full article
+- **Completed Task 3.6.2 (Related Articles):** Implemented intelligent related articles system
+  - **Category-Based Recommendations:** [`RelatedArticles`](components/custom/related-articles.tsx) component shows articles from same category first
+  - **Fallback Strategy:** If insufficient articles in same category, shows articles from other categories
+  - **Smart Layout:** Responsive grid layout with article previews, category badges, and hover effects
+  - **Enhanced Navigation:** Direct links to related articles and back to main feed
+  - **Performance Optimized:** Server-side rendering with efficient database queries
+- **UI Enhancements:** Added line-clamp utility classes to [`globals.css`](styles/globals.css) for text truncation
+- **Navigation Improvements:** Made article titles clickable in feed cards for seamless navigation to detail view
+- **Completed Task 3.6.5 (SEO-Friendly URLs):** Implemented comprehensive slug-based URL system
+  - **Database Enhancement:** Added `slug` column to articles table with automatic generation via PostgreSQL functions and triggers
+  - **Smart Slug Generation:** Creates readable URLs from article titles with 100-character truncation and unique constraint handling
+  - **Fallback Logic:** Articles with non-English or special character titles get `article-N` format (e.g., `article-191`)
+  - **Route Consolidation:** Resolved Next.js routing conflicts by consolidating `[id]` and `[slug]` routes into single dynamic route
+  - **Backward Compatibility:** Single route handles both new slugs and old UUIDs seamlessly using `isUUID()` helper function
+  - **Component Updates:** Updated [`ArticleCard`](components/custom/article-card.tsx) and [`RelatedArticles`](components/custom/related-articles.tsx) to use slugs in links
+  - **RPC Function Update:** Enhanced `get_user_visible_articles` to include slug field in responses
+  - **Migration Files:** Applied `20250705000002_add_article_slugs.sql` and `20250705000003_update_rpc_functions_for_slugs.sql`
+  - **SEO Benefits:** URLs now readable (e.g., `/article/july-4th-sales-the-65-best-deals...`) instead of UUIDs for better search engine optimization
+
 ## Next Steps:
 - **IMMEDIATE PRIORITY:** Production deployment following the deployment checklist in `tasks_plan.md`
 - **CRITICAL:** Configure automated news ingestion (GitHub Actions + Vercel environment variables)
-- **Post-Deployment Validation:** Verify fresh articles appear every 2 hours, test all user flows
-- **Future Development:** After successful deployment, begin Task 3.6 (Article Detail View) or Epic 4 (Social Features)
-- **Monitoring:** Set up production monitoring and alerts for automated ingestion failures
+- **SEO Verification:** Test slug URLs in production and verify search engine indexing with new readable URLs
+- **Post-Deployment Validation:** Verify fresh articles appear every 2 hours, test all user flows including new article detail pages with slug URLs
+- **Future Development:** After successful deployment, continue with Task 3.6.3 & 3.6.4 (Reading Time & Progress Tracking) or Epic 4 (Social Features)
+- **Monitoring:** Set up production monitoring and alerts for automated ingestion failures and slug generation performance

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/toast';
 import { analytics } from '@/lib/analytics';
+import Link from 'next/link';
 
 interface SavedFolder {
   id: string;
@@ -32,6 +33,7 @@ interface EnhancedArticleCardProps {
     category?: string;
     folder_id?: string | null;
     is_read?: boolean;
+    slug?: string;
     tags?: SavedTag[];
   };
   userId: string | null;
@@ -40,6 +42,26 @@ interface EnhancedArticleCardProps {
   onDataRefresh?: () => void;
   folders: SavedFolder[];
   tags: SavedTag[];
+}
+
+function cleanText(text: string | null | undefined): string {
+  if (!text) return '';
+  
+  return text
+    // Remove CDATA sections
+    .replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1')
+    // Decode common HTML entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    // Remove any remaining HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Clean up extra whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export default function EnhancedArticleCard({
@@ -313,14 +335,24 @@ export default function EnhancedArticleCard({
         </span>
       )}
       
-      <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
-      {article.source && <p className="text-sm text-gray-500 mb-1">{article.source}</p>}
-      {article.published_at && (
-        <p className="text-sm text-gray-500 mb-2">
-          {new Date(article.published_at).toLocaleDateString()}
-        </p>
-      )}
-      <p className="text-gray-700 flex-grow mb-4">{article.summary}</p>
+      <Link href={`/article/${article.slug || article.id}`}>
+        <h2 className="text-xl font-semibold mb-2 hover:text-blue-600 cursor-pointer transition-colors">{cleanText(article.title)}</h2>
+      </Link>
+      <div className="text-sm text-gray-500 mb-2 space-y-1">
+        {article.source && (
+          <p className="font-medium">{cleanText(article.source)}</p>
+        )}
+        {article.published_at && (
+          <p>
+            {new Date(article.published_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </p>
+        )}
+      </div>
+      <p className="text-gray-700 flex-grow mb-4">{cleanText(article.summary)}</p>
 
       {/* Organization metadata */}
       {showEnhancedControls && isSaved && (

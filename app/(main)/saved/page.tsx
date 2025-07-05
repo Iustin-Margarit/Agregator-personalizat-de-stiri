@@ -43,6 +43,7 @@ export default async function SavedPage() {
         image_url,
         published_at,
         source_id,
+        slug,
         sources (
           name,
           categories (
@@ -110,6 +111,7 @@ export default async function SavedPage() {
       is_read: savedArticle.is_read,
       notes: savedArticle.notes,
       saved_at: savedArticle.saved_at,
+      slug: article.slug,
       tags: articleTags[article.id] || []
     };
   });

@@ -54,6 +54,7 @@ interface SavedArticle {
   is_read: boolean;
   notes?: string;
   saved_at: string;
+  slug?: string;
   tags: SavedTag[];
 }
 
