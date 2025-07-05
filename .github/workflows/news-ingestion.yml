@@ -1,72 +1,72 @@
-name: News Ingestion Scheduler
+# name: News Ingestion Scheduler
 
-on:
-  schedule:
-    # Run every 2 hours (at :00 minutes)
-    - cron: '0 */2 * * *'
-  # Allow manual triggering for testing
-  workflow_dispatch:
+# on:
+#   schedule:
+#     # Run every 2 hours (at :00 minutes)
+#     - cron: '0 */2 * * *'
+#   # Allow manual triggering for testing
+#   workflow_dispatch:
 
-jobs:
-  trigger-ingestion:
-    # Only run on the main branch to prevent accidental production changes
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+# jobs:
+#   trigger-ingestion:
+#     # Only run on the main branch to prevent accidental production changes
+#     if: github.ref == 'refs/heads/main'
+#     runs-on: ubuntu-latest
     
-    steps:
-    - name: Trigger News Ingestion
-      run: |
-        set -e
-        set -o pipefail
+#     steps:
+#     - name: Trigger News Ingestion
+#       run: |
+#         set -e
+#         set -o pipefail
 
-        echo "🔄 Triggering news ingestion at $(date)"
+#         echo "🔄 Triggering news ingestion at $(date)"
 
-        if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-          echo "❌ Error: SUPABASE_URL secret is not set."
-          exit 1
-        fi
+#         if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+#           echo "❌ Error: SUPABASE_URL secret is not set."
+#           exit 1
+#         fi
 
-        if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-          echo "❌ Error: SUPABASE_ANON_KEY secret is not set."
-          exit 1
-        fi
+#         if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+#           echo "❌ Error: SUPABASE_ANON_KEY secret is not set."
+#           exit 1
+#         fi
         
-        # Call the Supabase Edge Function directly with detailed logging
-        echo "🌐 Calling: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
+#         # Call the Supabase Edge Function directly with detailed logging
+#         echo "🌐 Calling: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
         
-        response=$(curl -s -w "\n%{http_code}" -X POST \
-          "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Content-Type: application/json" \
-          -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}') || {
-          echo "❌ Curl command failed with exit code $?"
-          echo "This usually means network error or invalid URL"
-          exit 1
-        }
+#         response=$(curl -s -w "\n%{http_code}" -X POST \
+#           "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
+#           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+#           -H "Content-Type: application/json" \
+#           -d '{"triggered_by": "github-actions", "timestamp": "'$(date -Iseconds)'"}') || {
+#           echo "❌ Curl command failed with exit code $?"
+#           echo "This usually means network error or invalid URL"
+#           exit 1
+#         }
         
-        # Extract HTTP status code
-        http_code=$(echo "$response" | tail -n1)
-        body=$(echo "$response" | head -n -1)
+#         # Extract HTTP status code
+#         http_code=$(echo "$response" | tail -n1)
+#         body=$(echo "$response" | head -n -1)
         
-        echo "HTTP Status: $http_code"
-        echo "Response: $body"
+#         echo "HTTP Status: $http_code"
+#         echo "Response: $body"
         
-        # Check if request was successful
-        if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-          echo "✅ News ingestion triggered successfully"
+#         # Check if request was successful
+#         if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+#           echo "✅ News ingestion triggered successfully"
           
-          # Pretty print the JSON response if possible
-          if command -v jq &> /dev/null && [ -n "$body" ]; then
-            echo "📄 Response details:"
-            echo "$body" | jq '.' || echo "Response body is not valid JSON."
-          fi
-        else
-          echo "❌ News ingestion failed with status: $http_code"
-          echo "Response body: $body"
-          exit 1
-        fi
+#           # Pretty print the JSON response if possible
+#           if command -v jq &> /dev/null && [ -n "$body" ]; then
+#             echo "📄 Response details:"
+#             echo "$body" | jq '.' || echo "Response body is not valid JSON."
+#           fi
+#         else
+#           echo "❌ News ingestion failed with status: $http_code"
+#           echo "Response body: $body"
+#           exit 1
+#         fi
 
-    - name: Log Completion
-      run: |
-        echo "📰 News ingestion workflow completed at $(date)"
-        echo "⏰ Next scheduled run will be in 2 hours"
+#     - name: Log Completion
+#       run: |
+#         echo "📰 News ingestion workflow completed at $(date)"
+#         echo "⏰ Next scheduled run will be in 2 hours"
