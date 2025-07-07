@@ -61,9 +61,11 @@ interface SavedArticle {
 interface SavedArticlesManagerProps {
   userId: string;
   initialArticles: SavedArticle[];
+  articleCount: number;
+  articleLimit: number;
 }
 
-export default function SavedArticlesManager({ userId, initialArticles }: SavedArticlesManagerProps) {
+export default function SavedArticlesManager({ userId, initialArticles, articleCount, articleLimit }: SavedArticlesManagerProps) {
   const [articles, setArticles] = useState<SavedArticle[]>(initialArticles);
   const [folders, setFolders] = useState<SavedFolder[]>([]);
   const [tags, setTags] = useState<SavedTag[]>([]);
@@ -648,7 +650,12 @@ export default function SavedArticlesManager({ userId, initialArticles }: SavedA
     <div className="container mx-auto p-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Saved Articles</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Saved Articles</h1>
+          <Badge variant="secondary" className="text-lg">
+            {articleCount} / {articleLimit}
+          </Badge>
+        </div>
         <div className="flex gap-2">
           <Button
             variant={bulkActionMode ? "default" : "outline"}

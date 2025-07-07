@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function AuthHeader() {
+export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -45,6 +45,14 @@ export default function AuthHeader() {
         >
           Topics
         </Link>
+        {isAdmin && (
+          <Link
+            href="/admin/dashboard"
+            className={`hover:text-gray-300 ${pathname.startsWith('/admin') ? 'text-yellow-300 font-semibold' : ''}`}
+          >
+            Admin Panel
+          </Link>
+        )}
         <Button onClick={handleSignOut} variant="outline" className="text-black">
           Logout
         </Button>

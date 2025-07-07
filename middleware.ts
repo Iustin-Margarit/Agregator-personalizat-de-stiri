@@ -64,8 +64,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Handle Admin Route Protection
+  if (session && pathname.startsWith('/admin')) {
+    const { data: isAdmin, error } = await supabase.rpc('is_admin', {
+      p_user_id: session.user.id,
+    });
+
+    if (error || !isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/feed'; // Redirect non-admins to the main feed
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Handle onboarding redirection
-  if (session && pathname !== '/onboarding') {
+  if (session && pathname !== '/onboarding' && !pathname.startsWith('/admin')) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('has_completed_onboarding')
