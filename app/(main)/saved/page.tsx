@@ -30,7 +30,8 @@ export default async function SavedPage() {
   // Fetch all necessary data in parallel for efficiency
   const [
     { data: savedArticlesData, error: savedArticlesError },
-    { data: disabledCount, error: countError }
+    { data: disabledCount, error: countError },
+    { data: _, error: totalSavedError, count: totalSavedCount }
   ] = await Promise.all([
     supabase
       .from('saved_articles')
@@ -61,7 +62,11 @@ export default async function SavedPage() {
       .eq('user_id', user.id)
       .eq('articles.sources.is_enabled', true)
       .order('saved_at', { ascending: false }),
-    supabase.rpc('get_disabled_saved_article_count', { p_user_id: user.id })
+    supabase.rpc('get_disabled_saved_article_count', { p_user_id: user.id }),
+    supabase
+      .from('saved_articles')
+      .select('article_id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
   ]);
 
   if (savedArticlesError) {
@@ -148,7 +153,7 @@ export default async function SavedPage() {
       <SavedArticlesManager
         userId={user.id}
         initialArticles={articles}
-        articleCount={articles.length}
+        articleCount={totalSavedCount ?? articles.length}
         articleLimit={articleLimit}
       />
     </>

@@ -11,9 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
@@ -36,12 +36,18 @@ export default function UpdatePasswordPage() {
       return;
     }
 
+    if (password.length > 0 && password.length < 6) {
+        setError("Password should be at least 6 characters.");
+        setLoading(false);
+        return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       setError(error.message);
     } else {
-      setMessage("Password updated successfully. You can now log in.");
+      setMessage("Password updated successfully! Redirecting to login...");
       setTimeout(() => {
         router.push("/login");
       }, 3000);
@@ -62,9 +68,8 @@ export default function UpdatePasswordPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="password">New Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -72,9 +77,8 @@ export default function UpdatePasswordPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

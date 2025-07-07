@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { revalidateSavedAndOnboardingPages } from '@/app/actions';
+import { completeOnboarding } from '@/app/actions';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import type { User } from '@supabase/supabase-js';
 
 type Category = {
   id: string;
@@ -17,13 +19,53 @@ type Category = {
 interface OnboardingFormProps {
   categories: Category[];
   initialSelectedCategoryIds: string[];
+  initialUsername: string;
+  hasCompletedOnboarding: boolean;
+  user: User | null;
 }
 
-export default function OnboardingForm({ categories, initialSelectedCategoryIds }: OnboardingFormProps) {
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? 'Saving...' : 'Save and Continue'}
+        </Button>
+    )
+}
+
+export default function OnboardingForm({
+  categories,
+  initialSelectedCategoryIds,
+  initialUsername,
+  hasCompletedOnboarding,
+  user,
+}: OnboardingFormProps) {
   const router = useRouter();
+  const [username, setUsername] = useState(
+    initialUsername.startsWith('user-') ? '' : initialUsername
+  );
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialSelectedCategoryIds);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [state, formAction] = useFormState(completeOnboarding, null);
+
+  useEffect(() => {
+    if (user && initialUsername.startsWith('user-')) {
+      const emailName = user.email?.split('@')[0] || '';
+      const suggestions = [
+        emailName,
+        `${emailName}123`,
+        `${emailName}_news`,
+      ].filter(Boolean);
+      setUsernameSuggestions(suggestions);
+    }
+  }, [user, initialUsername]);
+
+  useEffect(() => {
+      if (state?.success) {
+          router.push('/feed');
+      }
+  }, [state, router]);
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategories((prev) =>
@@ -33,98 +75,71 @@ export default function OnboardingForm({ categories, initialSelectedCategoryIds 
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setError('You must be logged in to save preferences.');
-      setIsLoading(false);
-      return;
-    }
-
-    // First, delete any existing preferences for the user
-    const { error: deleteError } = await supabase
-      .from('user_preferred_categories')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (deleteError) {
-      setError('Failed to clear old preferences. Please try again.');
-      console.error('Error deleting preferences:', deleteError);
-      setIsLoading(false);
-      return;
-    }
-
-    const preferencesToInsert = selectedCategories.map((categoryId) => ({
-      user_id: user.id,
-      category_id: categoryId,
-    }));
-
-    let insertError: any = null;
-    // Only insert if there are categories selected
-    if (preferencesToInsert.length > 0) {
-      const { error } = await supabase
-        .from('user_preferred_categories')
-        .insert(preferencesToInsert);
-      insertError = error;
-    }
-
-    if (insertError) {
-      setError('Failed to save preferences. Please try again.');
-      console.error('Error inserting preferences:', insertError);
-      setIsLoading(false);
-      return;
-    }
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ has_completed_onboarding: true })
-      .eq('id', user.id);
-
-    if (profileError) {
-      setError('Failed to update your profile. Please try again.');
-      console.error('Error updating profile:', profileError);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(false);
-    await revalidateSavedAndOnboardingPages(); // Revalidate paths to force data re-fetch
-    router.push('/feed');
-  };
-
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
-        <CardHeader>
-          <CardTitle>Select Topics</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={category.id}
-                checked={selectedCategories.includes(category.id)}
-                onCheckedChange={() => handleCategoryChange(category.id)}
+      <form action={formAction}>
+        <CardContent className="space-y-6 pt-6">
+          {!hasCompletedOnboarding && (
+            <div className="space-y-2">
+              <Label htmlFor="username">Choose a Username</Label>
+              <Input
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g., newsfan123"
+                required
+                minLength={3}
               />
-              <Label htmlFor={category.id} className="cursor-pointer">
-                {category.name}
-              </Label>
+              {usernameSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <p className="text-xs text-gray-500 w-full">Suggestions:</p>
+                  {usernameSuggestions.map((suggestion) => (
+                    <Button
+                      key={suggestion}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setUsername(suggestion)}
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+          )}
+          <div className="space-y-2">
+            <Label>Select Your Topics</Label>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              {categories.map((category) => (
+                 <div key={category.id} className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        id={category.id}
+                        name="categories"
+                        value={category.id}
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={() => handleCategoryChange(category.id)}
+                        className="hidden"
+                    />
+                    <Checkbox
+                        id={`${category.id}-visual`}
+                        checked={selectedCategories.includes(category.id)}
+                        onCheckedChange={() => handleCategoryChange(category.id)}
+                    />
+                    <Label htmlFor={`${category.id}-visual`} className="cursor-pointer">
+                        {category.name}
+                    </Label>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start">
-          <Button type="submit" disabled={isLoading || selectedCategories.length === 0}>
-            {isLoading ? 'Saving...' : 'Save and Continue'}
-          </Button>
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <SubmitButton />
+            {state?.error && <p className="mt-2 text-sm text-red-600">{state.error}</p>}
         </CardFooter>
       </form>
     </Card>

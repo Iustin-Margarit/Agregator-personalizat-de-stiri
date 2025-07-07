@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./../styles/globals.css";
 import { ToastProvider } from "@/components/ui/toast";
+import AuthListener from "@/components/custom/auth-listener";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ToastProvider>
+          <AuthListener />
           {children}
         </ToastProvider>
       </body>

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import ConfirmationModal from '@/components/ui/confirmation-modal';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { useToast } from '@/components/ui/toast';
 import {
   Folder,
@@ -216,10 +216,6 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
     setIsDataLoaded(true);
   };
 
-  const refreshData = async () => {
-    // Since the page is now dynamic, we can simply reload to get fresh server-side data
-    window.location.reload();
-  };
 
   const createFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -506,8 +502,6 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
           : article
       ));
       clearSelection();
-      // Refresh data to ensure consistency
-      refreshData();
     }
   };
 
@@ -544,8 +538,16 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
         message: `${tagName} added to ${articleIds.length} article${articleIds.length === 1 ? '' : 's'}.`
       });
       clearSelection();
-      // Refresh data to show updated tags
-      refreshData();
+      // Manually update the local state to reflect the new tags
+      const newTag = tags.find(t => t.id === tagId);
+      if (newTag) {
+          setArticles(articles.map(article => {
+              if (selectedArticles.has(article.id) && !article.tags.some(t => t.id === tagId)) {
+                  return { ...article, tags: [...article.tags, newTag] };
+              }
+              return article;
+          }));
+      }
     }
   };
 
@@ -575,8 +577,13 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
         message: `${tagName} removed from ${articleIds.length} article${articleIds.length === 1 ? '' : 's'}.`
       });
       clearSelection();
-      // Refresh data to show updated tags
-      refreshData();
+      // Manually update the local state to reflect the removed tags
+      setArticles(articles.map(article => {
+          if (selectedArticles.has(article.id)) {
+              return { ...article, tags: article.tags.filter(t => t.id !== tagId) };
+          }
+          return article;
+      }));
     }
   };
 
@@ -1061,7 +1068,11 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                           a.id === articleId ? { ...a, ...updates } : a
                         ));
                       }}
-                      onDataRefresh={refreshData}
+                      onDataRefresh={() => {
+                        // This is a placeholder as the parent now handles data fetching via reload
+                        // A more advanced implementation might use a global state or context
+                        window.location.reload();
+                      }}
                       folders={folders}
                       tags={tags}
                     />
@@ -1079,7 +1090,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
         onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
         onConfirm={confirmationModal.onConfirm}
         title={confirmationModal.title}
-        message={confirmationModal.message}
+        description={confirmationModal.message}
         variant={confirmationModal.variant}
         confirmText={confirmationModal.variant === 'destructive' ? 'Delete' : 'Confirm'}
       />
