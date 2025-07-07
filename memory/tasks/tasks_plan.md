@@ -1,19 +1,20 @@
 # Task Backlog and Project Progress
 
-## Current Status (Updated 2025-06-30):
+## Current Status (Updated 2025-07-04):
 - ✅ **Authentication & Onboarding Complete:** Full user flow from signup to onboarding
-- ✅ **Data Ingestion Pipeline Complete:** All RSS sources working across 7 categories
-- ✅ **Core Feed Experience Complete:** Personalized feed displaying articles with save functionality
-- ✅ **Major Debugging & Fixes Complete:** All categories verified working, database consistency resolved
-- ✅ **MVP Ready:** Core application is fully functional and ready for use
+- ✅ **Data Ingestion Pipeline Complete:** All RSS sources working across 7 categories with automated scheduling
+- ✅ **Core Feed Experience Complete:** Personalized feed with filtering, liking, and comprehensive saved articles system
+- ✅ **Saved Articles Organization Complete:** Full folder/tag system with bulk operations and custom modals
+- ✅ **Custom UX Components Complete:** Professional modals and notifications replacing all native browser prompts
+- ✅ **MVP PRODUCTION READY:** All core features complete, ready for deployment with automated news ingestion
 
-## Recent Major Accomplishments (2025-06-30):
-- **Database Consistency:** Resolved all Supabase local/remote sync issues
-- **Category Completeness:** All 7 categories now have working RSS sources and display articles
-- **Feed Implementation:** Main feed page displays personalized articles with category badges
-- **Save Functionality:** Complete bookmark system with UI feedback
-- **Code Organization:** All debug files organized into structured `/debug/` folder
-- **Quality Assurance:** Extensive testing and verification of all core features
+## Recent Major Accomplishments (2025-07-04):
+- **Saved Articles Organization (Tasks 3.5.5 & 3.5.6):** Complete implementation with folders, tags, bulk operations, and enhanced management interface
+- **Custom Modal System (Task 3.5.7):** Replaced all native browser prompts with professional in-website modals and toast notifications
+- **Production Readiness:** All MVP features complete with automated news ingestion ready for deployment
+- **Database Schema Complete:** All migrations created and tested for saved articles organization
+- **Enhanced User Experience:** Professional UX with consistent design system integration and improved accessibility
+- **Deployment Ready:** GitHub Actions workflow and API endpoints configured for automated news ingestion
 
 ## Additional Work Completed (Not Originally Tracked):
 
@@ -41,6 +42,8 @@
 - [x] **Error States:** Implemented proper empty states and error handling
 - [x] **UI Polish:** Improved article card layout and save button feedback
 
+### Data Management:
+- [x] **Automated Article Cleanup:** Implemented a database job to automatically delete articles older than 30 days, ensuring data relevance and managing database size.
 ---
 
 ## Phase 1: MVP Launch (P0 - Must-Haves)
@@ -145,12 +148,65 @@
         - [x] **Task 3.5.2 (Frontend):** Add a "Save" button to `ArticleCard` with optimistic UI.
         - [x] **Task 3.5.3 (Logic):** Implement the background logic to insert/delete a row in the `saved_articles` table.
         - [x] **Task 3.5.4 (Page):** Build the "Saved Articles" page (`/saved`) to display a list of the user's saved articles.
-        - [ ] **Task 3.5.5 (Organization):** Add the ability to organize saved articles into folders/tags.
-        - [ ] **Task 3.5.6 (Bulk Actions):** Implement bulk operations (delete multiple, mark as read).
+        - [x] **Task 3.5.5 (Organization):** Add the ability to organize saved articles into folders/tags.
+            - **Completed (2025-07-04):** Full implementation of saved articles organization system
+            - **Database Schema:** Created `saved_folders`, `saved_tags`, and `saved_article_tags` tables with comprehensive RLS policies
+            - **Extended saved_articles:** Added `folder_id`, `is_read`, `notes`, and `updated_at` columns
+            - **UI Components:** Built `SavedArticlesManager` with sidebar organization and `EnhancedArticleCard` with organization controls
+            - **Features:** Folder creation with color customization, tag management, visual indicators, filtering by folder/tags/read status
+            - **Migration:** `20250704190000_add_saved_articles_organization.sql` successfully applied
+        - [x] **Task 3.5.6 (Bulk Actions):** Implement bulk operations (delete multiple, mark as read).
+            - **Completed (2025-07-04):** Full implementation of bulk operations for saved articles
+            - **Bulk Selection:** Checkboxes on each article with select all/clear selection functionality
+            - **Bulk Operations:** Mark multiple as read/unread, move to folders, delete with confirmation, tag assignment
+            - **UI Integration:** Bulk action bar with intuitive controls and real-time state synchronization
+            - **User Experience:** Efficient management of large collections of saved articles
+        - [x] **Task 3.5.7 (UX Enhancement):** Replace native browser prompts with custom in-website modals and notifications.
+            - **Completed (2025-07-04):** Full replacement of all native browser dialogs with custom components
+            - **Custom Confirmation Modal:** Built reusable [`ConfirmationModal`](components/ui/confirmation-modal.tsx) component with animations, backdrop handling, and keyboard support
+            - **Toast Notification System:** Implemented comprehensive toast system with [`Toast`](components/ui/toast.tsx) provider pattern and auto-dismiss functionality
+            - **Component Updates:** Updated [`SavedArticlesManager`](components/custom/saved-articles-manager.tsx) to replace 3 `confirm()` calls and 8 `alert()` calls
+            - **Enhanced Article Cards:** Updated [`EnhancedArticleCard`](components/custom/enhanced-article-card.tsx) and [`ArticleCard`](components/custom/article-card.tsx) to use toast notifications
+            - **Root Integration:** Added [`ToastProvider`](app/layout.tsx) at root level for global toast access
+            - **User Experience:** Consistent design system, professional appearance, better accessibility, and smooth animations
+            - **Types Supported:** Success, error, warning, and info notifications with proper styling and icons
     - [ ] **Task 3.6 (Article Detail):** Implement article detail view.
-        - [ ] **Task 3.6.1 (Page):** Create the article detail page (`/article/[id]`) with full content display.
-        - [ ] **Task 3.6.2 (Related Articles):** Show related articles based on category or keywords.
-        - [ ] **Task 3.6.3 (Reading Time):** Calculate and display estimated reading time.
+        - [x] **Task 3.6.1 (Page):** Create the article detail page (`/article/[id]`) with full content display.
+            - **Completed (2025-07-05):** Full implementation of article detail page with professional layout
+            - **Features:** Hero image display, category badges, meta information (source, author, publication date)
+            - **Reading Experience:** Calculated reading time, formatted content, clear navigation
+            - **Components:** Created [`ArticleInteractions`](components/custom/article-interactions.tsx) for like/save/share functionality
+            - **Navigation:** Added back navigation to feed and enhanced article card titles with clickable links
+            - **Design:** Responsive layout with proper typography, spacing, and visual hierarchy
+        - [x] **Task 3.6.2 (Related Articles):** Show related articles based on category or keywords.
+            - **Completed (2025-07-05):** Intelligent related articles system with category-based recommendations
+            - **Algorithm:** Prioritizes articles from same category, falls back to other categories if needed
+            - **Component:** Created [`RelatedArticles`](components/custom/related-articles.tsx) with server-side rendering
+            - **Layout:** Responsive grid with article previews, category badges, and hover effects
+            - **Performance:** Efficient database queries with proper article limits and sorting
+            - **Navigation:** Direct links to related articles and seamless user flow
+        - [x] **Task 3.6.3 (Reading Time):** Calculate and display estimated reading time.
+            - **Completed (2025-07-05):** Full implementation of intelligent reading time calculation and display
+            - **Utility Function:** Created [`reading-time.ts`](lib/utils/reading-time.ts) with `calculateReadingTime()`, `formatReadingTime()`, and `shouldShowReadingTime()` functions
+            - **Algorithm:** Uses 225 words per minute average reading speed with proper text cleaning (HTML entities, CDATA, tags)
+            - **Smart Display Logic:** Shows "Quick read" for short summaries (<50 words) and actual reading time only for substantial content
+            - **Article Detail Page:** Enhanced with clock icon and intelligent reading time display in meta information section
+            - **User Experience:** Honest and accurate reading time that reflects actual content length, avoiding misleading "1 min read" for empty summaries
+            - **Features:** Intelligent content analysis, proper text cleaning, responsive design with clock icons
+            - **Issue Resolution:** Fixed problem where all articles showed "1 min read" due to short/empty RSS summaries by implementing content-aware display logic
+        - [x] **Task 3.6.5 (SEO-Friendly URLs):** Implement slug-based URLs for better SEO and user experience.
+            - **Completed (2025-07-05):** Full implementation of SEO-friendly slug-based URL system
+            - **Database Schema:** Added `slug` column to articles table with automatic generation via triggers
+            - **Slug Generation:** Created intelligent slug generation functions that convert titles to URL-friendly format (lowercase, hyphens, special character removal)
+            - **URL Examples:** Changed from `/article/064867ae-91b5-491c-b73d-427dc3509f0e` to `/article/july-4th-sales-the-65-best-deals-weve-found-and-weve-tested-almost-all-of-them`
+            - **Backward Compatibility:** Single route handles both new slug URLs and old UUID URLs for seamless transition
+            - **Smart Fallbacks:** Articles with non-English or special-character-only titles get `article-N` format (e.g., `article-191`) with unique numbering
+            - **Route Consolidation:** Resolved Next.js routing conflicts by using single `[id]` dynamic route with UUID detection logic
+            - **Components Updated:** Modified [`ArticleCard`](components/custom/article-card.tsx) and [`RelatedArticles`](components/custom/related-articles.tsx) to use slugs in links
+            - **Database Functions:** Updated RPC functions to include slug field in queries for proper frontend integration
+            - **Migration Files:** Created comprehensive migrations for slug system (`20250705000002_add_article_slugs.sql`, `20250705000003_update_rpc_functions_for_slugs.sql`)
+            - **SEO Benefits:** Improved search engine optimization with descriptive, readable URLs that include article keywords
+            - **User Experience:** More intuitive and shareable URLs that give users context about article content
         - [ ] **Task 3.6.4 (Progress Tracking):** Track reading progress and mark articles as read.
 
 ### Epic 3.5: Performance & Reliability

@@ -117,37 +117,45 @@ export default function VirtualizedFeedContent({
         return;
       }
 
-      // Build query for articles
-      let query = supabase
-        .from('articles')
-        .select(`
-          id, 
-          title, 
-          summary, 
-          url, 
-          image_url, 
-          source, 
-          published_at,
-          source_id
-        `)
-        .in('source_id', filteredSourceIds);
+      // Use our new user-visible articles function for all queries
+      // For now, we'll handle filtering in a simpler way by using the function
+      // and then applying client-side filtering for search and date
+      const { data: allUserArticles, error: articlesError } = await supabase
+        .rpc('get_user_visible_articles', {
+          p_user_id: userId,
+          p_source_ids: filteredSourceIds,
+          p_limit: 100, // Get more articles to allow for filtering
+          p_offset: 0
+        });
 
-      // Add search functionality if search term is provided
-      if (searchTerm.trim()) {
-        query = query.or(`title.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`);
+      if (articlesError) {
+        console.error('Error fetching filtered articles:', articlesError);
+        return;
       }
 
-      // Add date filtering if not 'all'
+      let filteredArticlesData = allUserArticles || [];
+
+      // Apply search filtering if search term is provided
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredArticlesData = filteredArticlesData.filter((article: any) =>
+          article.title?.toLowerCase().includes(searchLower) ||
+          article.summary?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      // Apply date filtering if not 'all'
       if (dateFilterValue !== 'all') {
         const { start } = getDateRange(dateFilterValue);
         if (start) {
-          query = query.gte('published_at', start.toISOString());
+          filteredArticlesData = filteredArticlesData.filter((article: any) =>
+            new Date(article.published_at) >= start
+          );
         }
       }
 
-      const { data: filteredArticlesData, error: articlesError } = await query
-        .order('published_at', { ascending: false })
-        .limit(ARTICLES_PER_PAGE);
+      // Limit to requested page size
+      filteredArticlesData = filteredArticlesData.slice(0, ARTICLES_PER_PAGE);
 
       if (articlesError) {
         console.error('Error fetching filtered articles:', articlesError);
@@ -155,7 +163,7 @@ export default function VirtualizedFeedContent({
       }
 
       // Map articles to include category name
-      const articlesWithCategories = (filteredArticlesData || []).map(article => {
+      const articlesWithCategories = (filteredArticlesData || []).map((article: any) => {
         const sourceInfo = filteredSourcesData?.find(s => s.id === article.source_id);
         // Handle both object and array format for categories
         const categories = sourceInfo?.categories as any;
@@ -264,37 +272,43 @@ export default function VirtualizedFeedContent({
         currentSourceIds = currentSourceIds.filter(id => selectedSourceIds.includes(id));
       }
 
-      // Build query for pagination
-      let query = supabase
-        .from('articles')
-        .select(`
-          id, 
-          title, 
-          summary, 
-          url, 
-          image_url, 
-          source, 
-          published_at,
-          source_id
-        `)
-        .in('source_id', currentSourceIds);
+      // Use our new user-visible articles function for pagination
+      const { data: allMoreArticles, error } = await supabase
+        .rpc('get_user_visible_articles', {
+          p_user_id: userId,
+          p_source_ids: currentSourceIds,
+          p_limit: 100, // Get more articles to allow for filtering
+          p_offset: offset
+        });
 
-      // Add search functionality if search term is provided
-      if (searchQuery.trim()) {
-        query = query.or(`title.ilike.%${searchQuery}%,summary.ilike.%${searchQuery}%`);
+      if (error) {
+        console.error('Error loading more articles:', error);
+        return;
       }
 
-      // Add date filtering if not 'all'
+      let moreArticlesData = allMoreArticles || [];
+
+      // Apply search filtering if search term is provided
+      if (searchQuery.trim()) {
+        const searchLower = searchQuery.toLowerCase();
+        moreArticlesData = moreArticlesData.filter((article: any) =>
+          article.title?.toLowerCase().includes(searchLower) ||
+          article.summary?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      // Apply date filtering if not 'all'
       if (dateFilter !== 'all') {
         const { start } = getDateRange(dateFilter);
         if (start) {
-          query = query.gte('published_at', start.toISOString());
+          moreArticlesData = moreArticlesData.filter((article: any) =>
+            new Date(article.published_at) >= start
+          );
         }
       }
 
-      const { data: moreArticlesData, error } = await query
-        .order('published_at', { ascending: false })
-        .range(offset, offset + ARTICLES_PER_PAGE - 1);
+      // Limit to requested page size
+      moreArticlesData = moreArticlesData.slice(0, ARTICLES_PER_PAGE);
 
       if (error) {
         console.error('Error loading more articles:', error);
@@ -307,7 +321,7 @@ export default function VirtualizedFeedContent({
       }
 
       // Map articles to include category name from source data
-      const moreArticlesWithCategories = moreArticlesData.map(article => {
+      const moreArticlesWithCategories = moreArticlesData.map((article: any) => {
         const sourceInfo = currentSourcesData?.find(s => s.id === article.source_id);
         // Handle both object and array format for categories
         const categories = sourceInfo?.categories as any;

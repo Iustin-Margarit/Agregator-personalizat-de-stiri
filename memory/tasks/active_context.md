@@ -1,11 +1,12 @@
 # Active Development Context
 
 ## Current Work Focus:
-- **Task 3.4 Complete:** Successfully implemented the complete liking functionality including analytics tracking.
-- **Automated Ingestion Complete:** Implemented GitHub Actions workflow for automated news ingestion every 2 hours.
-- **Full User Engagement System:** The app now supports both saving and liking articles with comprehensive analytics.
-- **Production-Ready Scheduling:** Automated news ingestion system ready for deployment with proper monitoring and error handling.
-- **Ready for Next Features:** With complete engagement functionality and automated content updates, ready to move to article detail views or other features.
+- **All Core MVP Features Complete:** Tasks 3.5.5, 3.5.6, and 3.5.7 successfully completed (2025-07-04)
+- **SEO Enhancement Complete:** Task 3.6.5 successfully completed (2025-07-05) - Slug-based URLs implemented
+- **Saved Articles Organization System:** Full implementation with folders, tags, bulk operations, and enhanced management interface
+- **Custom Modal & Notification System:** Replaced all native browser prompts with professional in-website modals and toast notifications
+- **Production Ready:** Core application features complete with SEO optimization, ready for deployment following the deployment checklist in `tasks_plan.md`
+- **Next Priority:** Production deployment with automated news ingestion configuration (critical for user experience)
 
 ## Active Decisions and Considerations:
 - **Source Filtering Logic:** Implemented source filtering that works in combination with category, search, and date filters
@@ -67,9 +68,75 @@
   - **Root Cause:** Default Supabase ports conflicted with Windows reserved port ranges
   - **Solution:** Updated `supabase/config.toml` to use alternative ports (API: 58321, DB: 58322, Studio: 58323)
   - **Environment:** Ensured Docker Desktop compatibility and stable local development setup
+- **Added Automated Data Retention Policy:** Implemented a daily database job (`pg_cron`) to automatically delete articles older than 30 days.
+  - **Benefit:** Ensures data relevance, manages database growth, and improves overall system performance by keeping the `articles` table lean.
+  - **Files:** `supabase/migrations/20250704130000_add_article_cleanup_job.sql`
+- **Completed Tasks 3.5.5 & 3.5.6 (2025-07-04):** Implemented comprehensive saved articles organization and bulk actions
+  - **Database Schema:** Created `saved_folders`, `saved_tags`, and `saved_article_tags` tables with full RLS policies
+  - **Extended saved_articles:** Added `folder_id`, `is_read`, `notes`, and `updated_at` columns
+  - **SavedArticlesManager Component:** Built comprehensive management interface with sidebar organization
+  - **EnhancedArticleCard Component:** Enhanced article cards with organization controls and visual indicators
+  - **Folder Management:** Create/edit folders with color customization and article assignment
+  - **Tag System:** Create/manage tags with color coding and many-to-many article relationships
+  - **Bulk Operations:** Select multiple articles, mark as read/unread, move to folders, delete with confirmation
+  - **Filtering:** Filter saved articles by folder, tags, and read status
+  - **Migration Applied:** `20250704190000_add_saved_articles_organization.sql` successfully deployed
+  - **User Experience:** Intuitive organization system with real-time state synchronization
+- **Completed Task 3.5.7 (2025-07-04):** Replaced all native browser prompts with custom in-website modals and notifications
+  - **Custom Confirmation Modal:** Built [`ConfirmationModal`](components/ui/confirmation-modal.tsx) component with:
+    - Professional design matching site aesthetics
+    - Smooth CSS transitions and animations
+    - Backdrop click and Escape key handling
+    - Support for destructive and default variants
+    - Proper accessibility with focus management
+  - **Toast Notification System:** Implemented comprehensive toast system with:
+    - [`Toast`](components/ui/toast.tsx) provider pattern for global access
+    - Auto-dismiss functionality with configurable duration
+    - Multiple types: success, error, warning, info
+    - Manual close capability with X button
+    - Proper positioning and z-index management
+  - **Component Updates:** Updated all components to use new system:
+    - [`SavedArticlesManager`](components/custom/saved-articles-manager.tsx): Replaced 3 `confirm()` calls and 8 `alert()` calls
+    - [`EnhancedArticleCard`](components/custom/enhanced-article-card.tsx): Replaced `alert()` with toast notifications
+    - [`ArticleCard`](components/custom/article-card.tsx): Added toast notifications for login requirements
+  - **Root Integration:** Added [`ToastProvider`](app/layout.tsx) wrapper at root level for global toast access
+  - **User Experience Improvements:**
+    - Eliminated jarring native browser dialogs
+    - Consistent design system integration
+    - Better accessibility and keyboard navigation
+    - Professional appearance with smooth animations
+    - Contextual messaging with appropriate icons and colors
+
+## Recent Changes (2025-07-05):
+- **Completed Task 3.6.1 (Article Detail Page):** Implemented comprehensive article detail view at `/article/[id]`
+  - **Full Content Display:** Professional article layout with hero image, category badges, meta information, and reading time calculation
+  - **Article Interactions:** Created [`ArticleInteractions`](components/custom/article-interactions.tsx) component with like, save, and share functionality
+  - **Enhanced Navigation:** Added back navigation to feed and clickable article titles in [`ArticleCard`](components/custom/article-card.tsx)
+  - **Professional Design:** Responsive layout with proper typography, spacing, and visual hierarchy
+  - **Reading Experience:** Calculated reading time, formatted publication dates, and clear call-to-action for full article
+- **Completed Task 3.6.2 (Related Articles):** Implemented intelligent related articles system
+  - **Category-Based Recommendations:** [`RelatedArticles`](components/custom/related-articles.tsx) component shows articles from same category first
+  - **Fallback Strategy:** If insufficient articles in same category, shows articles from other categories
+  - **Smart Layout:** Responsive grid layout with article previews, category badges, and hover effects
+  - **Enhanced Navigation:** Direct links to related articles and back to main feed
+  - **Performance Optimized:** Server-side rendering with efficient database queries
+- **UI Enhancements:** Added line-clamp utility classes to [`globals.css`](styles/globals.css) for text truncation
+- **Navigation Improvements:** Made article titles clickable in feed cards for seamless navigation to detail view
+- **Completed Task 3.6.5 (SEO-Friendly URLs):** Implemented comprehensive slug-based URL system
+  - **Database Enhancement:** Added `slug` column to articles table with automatic generation via PostgreSQL functions and triggers
+  - **Smart Slug Generation:** Creates readable URLs from article titles with 100-character truncation and unique constraint handling
+  - **Fallback Logic:** Articles with non-English or special character titles get `article-N` format (e.g., `article-191`)
+  - **Route Consolidation:** Resolved Next.js routing conflicts by consolidating `[id]` and `[slug]` routes into single dynamic route
+  - **Backward Compatibility:** Single route handles both new slugs and old UUIDs seamlessly using `isUUID()` helper function
+  - **Component Updates:** Updated [`ArticleCard`](components/custom/article-card.tsx) and [`RelatedArticles`](components/custom/related-articles.tsx) to use slugs in links
+  - **RPC Function Update:** Enhanced `get_user_visible_articles` to include slug field in responses
+  - **Migration Files:** Applied `20250705000002_add_article_slugs.sql` and `20250705000003_update_rpc_functions_for_slugs.sql`
+  - **SEO Benefits:** URLs now readable (e.g., `/article/july-4th-sales-the-65-best-deals...`) instead of UUIDs for better search engine optimization
 
 ## Next Steps:
-- **Ready for Production Deployment:** All core features complete, automated scheduling implemented and documented
-- **Deployment Critical Path:** Follow `DEPLOYMENT.md` and `memory/tasks/tasks_plan.md` deployment checklist
-- **Post-Deployment:** Begin Task 3.6 (Article Detail View) or other advanced features
-- **Monitoring:** Ensure automated news ingestion runs successfully every 2 hours after deployment
+- **IMMEDIATE PRIORITY:** Production deployment following the deployment checklist in `tasks_plan.md`
+- **CRITICAL:** Configure automated news ingestion (GitHub Actions + Vercel environment variables)
+- **SEO Verification:** Test slug URLs in production and verify search engine indexing with new readable URLs
+- **Post-Deployment Validation:** Verify fresh articles appear every 2 hours, test all user flows including new article detail pages with slug URLs
+- **Future Development:** After successful deployment, continue with Task 3.6.3 & 3.6.4 (Reading Time & Progress Tracking) or Epic 4 (Social Features)
+- **Monitoring:** Set up production monitoring and alerts for automated ingestion failures and slug generation performance

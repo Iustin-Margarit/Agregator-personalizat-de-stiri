@@ -84,3 +84,11 @@ supabase/functions/**/*.npmrc
 
 # General log files
 *.log
+
+# Business-sensitive documentation (should not be public)
+PREMIUM_FEATURES_GUIDE.md
+DEPLOYMENT.md
+DEPLOYMENT_GUIDE_PER_USER_RETENTION.md
+
+# Development and cleanup scripts
+cleanup_repo.sh

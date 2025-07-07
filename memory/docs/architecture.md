@@ -122,3 +122,24 @@ The application follows a **Jamstack architecture**, leveraging a decoupled fron
 - **Component Strategy:**
     - **Server Components:** Used for data-fetching pages to reduce client-side load.
     - **Client Components:** Used for any component requiring interactivity (e.g., buttons, forms, realtime updates).
+
+---
+
+## 6. Data Lifecycle
+
+### 6.1. Article Cleanup & Per-User Retention
+- **Description:** To manage storage costs while providing personalized article retention, the system implements per-user article visibility.
+- **Implementation:**
+  - A `pg_cron` job runs the `delete_old_articles()` PostgreSQL function every day at midnight UTC.
+  - A new `get_user_visible_articles()` function controls which articles each user can see.
+- **Logic:**
+  - **Article Deletion:** Articles older than **60 days** with no saved_articles entries are permanently deleted from the database.
+  - **Per-User Visibility:** Each user sees:
+    - All articles from the last **30 days** (regardless of save status)
+    - Their own saved articles (regardless of age)
+  - **Key Benefit:** If User1 saves an article, it remains visible only to User1 after 30 days, not to other users who didn't save it.
+- **User Impact:**
+  - The main feed shows recent articles (< 30 days) plus the user's saved articles.
+  - Saved articles are preserved indefinitely for the user who saved them.
+  - Articles saved by other users don't clutter your feed after 30 days.
+  - True per-user article retention based on individual user actions.
