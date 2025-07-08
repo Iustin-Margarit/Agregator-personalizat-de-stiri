@@ -1,4 +1,5 @@
 import AuthHeader from "@/components/custom/auth-header";
+import { ThemeProvider } from "@/components/custom/theme-provider";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function MainLayout({
@@ -20,10 +21,12 @@ export default async function MainLayout({
   }
 
   return (
-    <div>
-      <AuthHeader isAdmin={isAdmin} />
-      {/* Main layout with nav, sidebar will go here */}
-      <main>{children}</main>
-    </div>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <div>
+            <AuthHeader isAdmin={isAdmin} />
+            {/* Main layout with nav, sidebar will go here */}
+            <main>{children}</main>
+        </div>
+    </ThemeProvider>
   );
 }

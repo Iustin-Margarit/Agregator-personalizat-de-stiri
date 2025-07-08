@@ -4,21 +4,44 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Edit2, Upload, Trash2 } from 'lucide-react';
+import { ColoredAvatar } from '@/components/ui/colored-avatar';
+import { Palette } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { ProfileForms } from '@/components/custom/profile-forms';
-import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { removeAvatar } from '@/app/actions';
+import { updateAvatarColor } from '@/app/actions';
+import { useFormState, useFormStatus } from 'react-dom';
 
 type Profile = {
     username: string;
-    avatar_url: string;
+    avatar_color: string;
 };
+
+const PRESET_COLORS = [
+  '#3B82F6', // Blue
+  '#EF4444', // Red
+  '#10B981', // Green
+  '#F59E0B', // Yellow
+  '#8B5CF6', // Purple
+  '#F97316', // Orange
+  '#06B6D4', // Cyan
+  '#84CC16', // Lime
+  '#EC4899', // Pink
+  '#6B7280', // Gray
+  '#DC2626', // Dark Red
+  '#059669', // Dark Green
+];
+
+function SubmitButton({ children, disabled }: { children: React.ReactNode, disabled?: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending || disabled} aria-disabled={pending || disabled}>
+      {pending ? "Saving..." : children}
+    </Button>
+  );
+}
 
 export default function ProfilePage() {
   const supabase = createClient();
@@ -26,11 +49,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [lastRemovalTimestamp, setLastRemovalTimestamp] = useState(0);
+  const [selectedColor, setSelectedColor] = useState('#3B82F6');
+  const [lastColorUpdateTimestamp, setLastColorUpdateTimestamp] = useState(0);
+
+  const [colorState, colorFormAction] = useFormState(updateAvatarColor, null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,7 +62,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('username, avatar_color')
           .eq('id', user.id)
           .single();
 
@@ -49,14 +71,14 @@ export default function ProfilePage() {
           showToast({ title: 'Error', message: 'Could not fetch your profile.', type: 'error' });
         } else if (data) {
           setProfile(data);
-          setAvatarUrl(data.avatar_url || '');
+          setSelectedColor(data.avatar_color || '#3B82F6');
         }
       }
       setLoading(false);
     };
 
     fetchProfile();
-     const handleProfileUpdate = () => fetchProfile();
+    const handleProfileUpdate = () => fetchProfile();
     window.addEventListener('profileUpdated', handleProfileUpdate);
 
     return () => {
@@ -64,76 +86,17 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) {
-      return;
-    }
-    if (!user) return;
-
-    const file = event.target.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg'];
-    if (!allowedTypes.includes(file.type)) {
-        showToast({ title: 'Invalid File Type', message: 'Please upload a PNG or JPG image.', type: 'error' });
-        return;
-    }
-    const maxSizeInBytes = 2 * 1024 * 1024;
-    if (file.size > maxSizeInBytes) {
-        showToast({ title: 'File Too Large', message: 'Please upload an image smaller than 2MB.', type: 'error' });
-        return;
-    }
-
-    setUploading(true);
-    
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, {
-        upsert: true,
-    });
-
-    if (uploadError) {
-      showToast({ title: 'Upload Error', message: `Failed to upload avatar: ${uploadError.message}`, type: 'error' });
-      setUploading(false);
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    
-    const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
-
-    if (updateError) {
-        showToast({ title: 'Error', message: 'Could not save new avatar.', type: 'error' });
-    } else {
-        setAvatarUrl(publicUrl);
-        showToast({ title: 'Success', message: 'Avatar updated!', type: 'success' });
-        // Dispatch event to notify header
-        window.dispatchEvent(new Event('profileUpdated'));
-    }
-    
-    setUploading(false);
-  };
-
-  const handleRemoveClick = async () => {
-    setIsRemoving(true);
-    const result = await removeAvatar();
-    if (result.timestamp > lastRemovalTimestamp) {
-        setLastRemovalTimestamp(result.timestamp);
-        if (result.error) {
-            showToast({ title: 'Error', message: result.error, type: 'error' });
-        } else {
-            showToast({ title: 'Success', message: 'Avatar removed successfully!', type: 'success' });
-            setAvatarUrl('');
+  useEffect(() => {
+    if (colorState?.timestamp && colorState.timestamp > lastColorUpdateTimestamp) {
+        setLastColorUpdateTimestamp(colorState.timestamp);
+        if (colorState.error) {
+            showToast({ title: "Error", message: colorState.error, type: "error" });
+        } else if (colorState.success) {
+            showToast({ title: "Success", message: "Avatar color updated successfully!", type: "success" });
             window.dispatchEvent(new Event('profileUpdated'));
         }
     }
-    setIsRemoving(false);
-    setIsModalOpen(false);
-  };
-  
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return '?';
-    return name.charAt(0).toUpperCase();
-  };
+  }, [colorState, showToast, lastColorUpdateTimestamp]);
 
   if (loading && !user) {
     return <div className="text-center p-8">Loading...</div>;
@@ -144,41 +107,59 @@ export default function ProfilePage() {
       <Card className="max-w-lg mx-auto">
         <CardHeader className="text-center">
             <div className="relative w-32 h-32 mx-auto">
-                <Avatar className="w-full h-full text-4xl">
-                    <AvatarImage src={avatarUrl} alt={profile?.username} key={avatarUrl} />
-                    <AvatarFallback>{getInitials(profile?.username)}</AvatarFallback>
-                </Avatar>
-                 <div className="absolute bottom-0 right-0 flex gap-1">
-                    <label htmlFor="avatar-upload" className="bg-gray-800 text-white p-2 rounded-full cursor-pointer hover:bg-gray-700">
-                        <Upload className="h-5 w-5" />
-                        <input id="avatar-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={uploadAvatar} disabled={uploading}/>
-                    </label>
-                    {avatarUrl && (
-                        <Button variant="destructive" size="icon" className="h-9 w-9 p-2 rounded-full" onClick={() => setIsModalOpen(true)}>
-                            <Trash2 className="h-5 w-5" />
-                        </Button>
-                    )}
+                <ColoredAvatar 
+                  username={profile?.username} 
+                  color={selectedColor} 
+                  size="xl" 
+                />
+                <div className="absolute bottom-0 right-0">
+                    <div className="bg-gray-800 text-white p-2 rounded-full">
+                        <Palette className="h-5 w-5" />
+                    </div>
                 </div>
             </div>
-            {uploading && <p className="text-sm mt-2">Uploading...</p>}
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+            <Card>
+              <form action={colorFormAction}>
+                <CardHeader>
+                  <CardTitle>Avatar Color</CardTitle>
+                  <CardDescription>Choose a color for your profile avatar.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Label>Select Color</Label>
+                    <div className="grid grid-cols-6 gap-2">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-10 h-10 rounded-full border-2 transition-all ${
+                            selectedColor === color 
+                              ? 'border-gray-800 scale-110' 
+                              : 'border-gray-300 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setSelectedColor(color)}
+                          aria-label={`Select color ${color}`}
+                        />
+                      ))}
+                    </div>
+                    <input type="hidden" name="color" value={selectedColor} />
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t px-6 py-4">
+                  <SubmitButton>Update Color</SubmitButton>
+                </CardFooter>
+              </form>
+            </Card>
+
             <ProfileForms user={user} profile={profile} />
             <Link href="/onboarding" className="mt-4 inline-block w-full">
               <Button variant="outline" className='w-full'>Manage Your Topics</Button>
            </Link>
         </CardContent>
      </Card>
-     <ConfirmationModal
-       isOpen={isModalOpen}
-       onClose={() => setIsModalOpen(false)}
-       onConfirm={handleRemoveClick}
-       title="Remove Profile Picture"
-       description="Are you sure you want to remove your profile picture?"
-       confirmText="Remove"
-       variant="destructive"
-       isLoading={isRemoving}
-     />
    </div>
   );
 }

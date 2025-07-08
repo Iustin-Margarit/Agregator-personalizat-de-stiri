@@ -11,6 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { useToast } from '@/components/ui/toast';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Folder,
   Tag,
   Plus,
@@ -22,7 +28,9 @@ import {
   Edit3,
   X,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  Search,
+  ArrowDownUp
 } from 'lucide-react';
 import EnhancedArticleCard from './enhanced-article-card';
 
@@ -86,6 +94,8 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#10B981');
   const [bulkActionMode, setBulkActionMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('saved_at_desc');
   
   // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<{
@@ -218,14 +228,21 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
 
 
   const createFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim() || newFolderName.trim().length > 25) {
+        showToast({
+            type: 'error',
+            title: 'Invalid folder name',
+            message: 'Folder name must be between 1 and 25 characters.'
+        });
+        return;
+    }
 
     const { data, error } = await supabase
       .from('saved_folders')
       .insert({
         user_id: userId,
         name: newFolderName.trim(),
-        description: newFolderDescription.trim() || null,
+        description: newFolderDescription.trim().slice(0, 40) || null,
         color: newFolderColor
       })
       .select()
@@ -259,13 +276,20 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
   };
 
   const updateFolder = async () => {
-    if (!editingFolder || !editFolderName.trim()) return;
+    if (!editingFolder || !editFolderName.trim() || editFolderName.trim().length > 25) {
+        showToast({
+            type: 'error',
+            title: 'Invalid folder name',
+            message: 'Folder name must be between 1 and 25 characters.'
+        });
+        return;
+    }
 
     const { data, error } = await supabase
       .from('saved_folders')
       .update({
         name: editFolderName.trim(),
-        description: editFolderDescription.trim() || null,
+        description: editFolderDescription.trim().slice(0, 40) || null,
         color: editFolderColor
       })
       .eq('id', editingFolder)
@@ -340,12 +364,20 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
           ));
           loadFoldersAndTags(); // Reload to ensure consistency
         }
+        setConfirmationModal(prev => ({ ...prev, isOpen: false }));
       }
     });
   };
 
   const createTag = async () => {
-    if (!newTagName.trim()) return;
+    if (!newTagName.trim() || newTagName.trim().length > 15) {
+        showToast({
+            type: 'error',
+            title: 'Invalid tag name',
+            message: 'Tag name must be between 1 and 15 characters.'
+        });
+        return;
+    }
 
     const { data, error } = await supabase
       .from('saved_tags')
@@ -432,7 +464,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
   };
 
   const selectAllArticles = () => {
-    const filteredArticleIds = getFilteredArticles().map(article => article.id);
+    const filteredArticleIds = getProcessedArticles().map(article => article.id);
     setSelectedArticles(new Set(filteredArticleIds));
   };
 
@@ -623,9 +655,12 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
     });
   };
 
-  const getFilteredArticles = () => {
-    return articles.filter(article => {
-      // Filter by folder
+  const getProcessedArticles = () => {
+    let processedArticles = articles;
+
+    // 1. Filter by folder, tags, read status
+    processedArticles = processedArticles.filter(article => {
+      // Folder filter
       if (selectedFolder !== 'all') {
         if (selectedFolder === 'unorganized') {
           if (article.folder_id) return false;
@@ -633,24 +668,53 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
           if (article.folder_id !== selectedFolder) return false;
         }
       }
-
-      // Filter by tags
+      // Tag filter
       if (selectedTags.size > 0) {
         const articleTagIds = article.tags.map(tag => tag.id);
-        const hasSelectedTag = Array.from(selectedTags).some(tagId => 
+        const hasSelectedTag = Array.from(selectedTags).some(tagId =>
           articleTagIds.includes(tagId)
         );
         if (!hasSelectedTag) return false;
       }
-
-      // Filter by read status
+      // Read status filter
       if (!showReadArticles && article.is_read) return false;
-
       return true;
     });
+
+    // 2. Filter by search term
+    if (searchTerm.trim() !== '') {
+      const lowercasedTerm = searchTerm.toLowerCase();
+      processedArticles = processedArticles.filter(article =>
+        article.title?.toLowerCase().includes(lowercasedTerm) ||
+        article.summary?.toLowerCase().includes(lowercasedTerm) ||
+        article.source?.toLowerCase().includes(lowercasedTerm)
+      );
+    }
+
+    // 3. Sort articles
+    processedArticles.sort((a, b) => {
+      switch (sortOrder) {
+        case 'saved_at_desc':
+          return new Date(b.saved_at).getTime() - new Date(a.saved_at).getTime();
+        case 'saved_at_asc':
+          return new Date(a.saved_at).getTime() - new Date(b.saved_at).getTime();
+        case 'published_at_desc':
+          return new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime();
+        case 'published_at_asc':
+          return new Date(a.published_at || 0).getTime() - new Date(b.published_at || 0).getTime();
+        case 'title_asc':
+          return a.title.localeCompare(b.title);
+        case 'title_desc':
+          return b.title.localeCompare(a.title);
+        default:
+          return 0;
+      }
+    });
+
+    return processedArticles;
   };
 
-  const filteredArticles = getFilteredArticles();
+  const processedArticles = getProcessedArticles();
   const selectedCount = selectedArticles.size;
 
   return (
@@ -698,7 +762,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
             <div className="space-y-1">
               <button
                 className={`w-full text-left px-2 py-1 rounded text-sm ${
-                  selectedFolder === 'all' ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
+                  selectedFolder === 'all' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted'
                 }`}
                 onClick={() => {
                   setSelectedFolder('all');
@@ -709,7 +773,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
               </button>
               <button
                 className={`w-full text-left px-2 py-1 rounded text-sm ${
-                  selectedFolder === 'unorganized' ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
+                  selectedFolder === 'unorganized' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted'
                 }`}
                 onClick={() => {
                   setSelectedFolder('unorganized');
@@ -722,19 +786,21 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                 <div key={folder.id} className="group relative">
                   {editingFolder === folder.id ? (
                     // Edit mode
-                    <div className="space-y-2 p-2 border rounded bg-gray-50">
+                    <div className="space-y-2 p-2 border rounded bg-muted">
                       <Input
                         placeholder="Folder name"
                         value={editFolderName}
                         onChange={(e) => setEditFolderName(e.target.value)}
                         className="text-sm"
-                      />
+                        maxLength={25}
+                        />
                       <Input
                         placeholder="Description (optional)"
                         value={editFolderDescription}
                         onChange={(e) => setEditFolderDescription(e.target.value)}
                         className="text-sm"
-                      />
+                        maxLength={40}
+                        />
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -772,7 +838,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                     <div className="flex items-center">
                       <button
                         className={`flex-1 text-left px-2 py-1 rounded text-sm flex items-center ${
-                          selectedFolder === folder.id ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
+                          selectedFolder === folder.id ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted'
                         }`}
                         onClick={() => {
                           setSelectedFolder(folder.id);
@@ -806,12 +872,14 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                   placeholder="Folder name"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                />
+                  maxLength={25}
+                  />
                 <Input
                   placeholder="Description (optional)"
                   value={newFolderDescription}
                   onChange={(e) => setNewFolderDescription(e.target.value)}
-                />
+                  maxLength={40}
+                  />
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -879,7 +947,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                      e.stopPropagation(); // Prevent tag selection when deleting
                      deleteTag(tag.id);
                    }}
-                   className="absolute top-0 right-0 p-0.5 rounded-full bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                   className="absolute top-0 right-0 p-0.5 rounded-full bg-muted text-muted-foreground hover:bg-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                    aria-label={`Delete tag ${tag.name}`}
                  >
                    <X className="h-3 w-3" />
@@ -895,7 +963,8 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                   placeholder="Tag name"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
-                />
+                  maxLength={15}
+                  />
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -945,9 +1014,38 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
 
         {/* Main Content - Articles */}
         <div className="lg:col-span-3">
+          {/* Search and Sort Controls */}
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search saved articles..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <ArrowDownUp className="h-4 w-4" />
+                  Sort By
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setSortOrder('saved_at_desc')}>Date Saved (Newest)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder('saved_at_asc')}>Date Saved (Oldest)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder('published_at_desc')}>Date Published (Newest)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder('published_at_asc')}>Date Published (Oldest)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder('title_asc')}>Title (A-Z)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder('title_desc')}>Title (Z-A)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        
           {/* Bulk Actions Bar */}
           {bulkActionMode && (
-            <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+            <div className="bg-card border rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-medium">
@@ -977,7 +1075,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                     {/* Move to Folder Dropdown */}
                     <select
                       key={folders.length}
-                      className="px-3 py-1 border rounded text-sm"
+                      className="px-3 py-1 border rounded text-sm bg-background text-foreground"
                       onChange={(e) => {
                         const folderId = e.target.value === 'none' ? null : e.target.value;
                         bulkMoveToFolder(folderId);
@@ -997,7 +1095,7 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                     {/* Manage Tags Dropdown */}
                     <select
                       key={`manage-tags-${tags.length}`}
-                      className="px-3 py-1 border rounded text-sm"
+                      className="px-3 py-1 border rounded text-sm bg-background text-foreground"
                       onChange={(e) => {
                         const [action, tagId] = e.target.value.split(':');
                         if (action && tagId) {
@@ -1039,21 +1137,23 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
           )}
 
           {/* Articles Grid */}
-          {filteredArticles.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              <p className="text-lg">No articles found with current filters.</p>
-              <p>Try adjusting your folder, tag, or read status filters.</p>
+          {processedArticles.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              <p className="text-lg">
+                {searchTerm ? `No articles match "${searchTerm}".` : 'No articles found.'}
+              </p>
+              <p>Try adjusting your filters or search term.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredArticles.map((article) => (
+              {processedArticles.map((article) => (
                 <div key={article.id} className="relative">
                   {bulkActionMode && (
                     <div className="absolute top-2 left-2 z-10">
                       <Checkbox
                         checked={selectedArticles.has(article.id)}
                         onCheckedChange={() => toggleArticleSelection(article.id)}
-                        className="bg-white border-2"
+                        className="bg-background border-2"
                       />
                     </div>
                   )}

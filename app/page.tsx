@@ -58,7 +58,7 @@ export default function Home() {
             <p>{modalContent.body}</p>
         </InfoModal>
 
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center justify-center min-h-screen">
           <div className="w-full max-w-2xl mx-auto text-center p-8">
             <h1 className="text-4xl font-bold mb-4">
               Welcome to the Personalized News Aggregator

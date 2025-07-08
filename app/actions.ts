@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import DOMPurify from 'dompurify';
 
 type ActionResponse = {
   success: boolean;
@@ -32,13 +31,7 @@ export async function updateUsername(
     return { success: false, error: 'Username must be at least 3 characters long.', timestamp: Date.now() };
   }
   
-  const sanitizedUsername = DOMPurify.sanitize(username);
-
-  if (sanitizedUsername !== username) {
-      return { success: false, error: 'Username contains invalid characters.', timestamp: Date.now() };
-  }
-
-  const { error } = await supabase.from('profiles').update({ username: sanitizedUsername }).eq('id', user.id);
+  const { error } = await supabase.from('profiles').update({ username: username }).eq('id', user.id);
 
   if (error) {
     if (error.code === '23505') {
@@ -107,7 +100,10 @@ export async function updateUserPassword(
     return { success: true, error: null, timestamp: Date.now() };
 }
 
-export async function removeAvatar(): Promise<ActionResponse> {
+export async function updateAvatarColor(
+    prevState: any,
+    formData: FormData
+): Promise<ActionResponse> {
     const { createClient } = await import('@/lib/supabase/server');
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -116,11 +112,19 @@ export async function removeAvatar(): Promise<ActionResponse> {
         return { success: false, error: 'You must be logged in to update your profile.', timestamp: Date.now() };
     }
 
-    const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
+    const color = formData.get('color') as string;
+
+    // Validate hex color format
+    const hexColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (!color || !hexColorRegex.test(color)) {
+        return { success: false, error: 'Please select a valid color.', timestamp: Date.now() };
+    }
+
+    const { error } = await supabase.from('profiles').update({ avatar_color: color }).eq('id', user.id);
 
     if (error) {
-        console.error('Error removing avatar:', error);
-        return { success: false, error: 'Failed to remove avatar. Please try again.', timestamp: Date.now() };
+        console.error('Error updating avatar color:', error);
+        return { success: false, error: 'Failed to update avatar color. Please try again.', timestamp: Date.now() };
     }
 
     revalidatePath('/profile');
@@ -142,21 +146,30 @@ export async function completeOnboarding(
     const username = formData.get('username') as string;
     const selectedCategories = formData.getAll('categories') as string[];
 
-    if (!username || username.trim().length < 3) {
+    // Get current profile to check existing username
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+    let finalUsername = username?.trim() || currentProfile?.username || '';
+
+    // If no username provided and no existing username, create one from email
+    if (!finalUsername) {
+        const emailPrefix = user.email?.split('@')[0] || '';
+        finalUsername = emailPrefix.length >= 3 ? emailPrefix : `${emailPrefix}123`;
+    }
+
+    if (finalUsername.length < 3) {
         return { success: false, error: 'Username must be at least 3 characters long.', timestamp: Date.now() };
     }
     
-    const sanitizedUsername = DOMPurify.sanitize(username.trim());
-
-    if (sanitizedUsername !== username.trim()) {
-        return { success: false, error: 'Username contains invalid characters.', timestamp: Date.now() };
-    }
-
     const { error: profileError } = await supabase
         .from('profiles')
         .update({
             has_completed_onboarding: true,
-            username: sanitizedUsername,
+            username: finalUsername,
         })
         .eq('id', user.id);
 

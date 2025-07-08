@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { User, LogOut } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ColoredAvatar } from "@/components/ui/colored-avatar";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "../ui/button";
 
 type Profile = {
   username: string | null;
-  avatar_url: string | null;
+  avatar_color: string | null;
 };
 
 export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
@@ -32,7 +33,7 @@ export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
     if (user) {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, avatar_url')
+        .select('username, avatar_color')
         .eq('id', user.id)
         .single();
       if (error) {
@@ -62,10 +63,6 @@ export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
     router.push("/login");
   };
 
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return 'U';
-    return name.charAt(0).toUpperCase();
-  };
 
   return (
     <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
@@ -104,10 +101,11 @@ export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar>
-                <AvatarImage src={profile?.avatar_url || ''} alt={profile?.username || 'User Avatar'} />
-                <AvatarFallback>{getInitials(profile?.username)}</AvatarFallback>
-              </Avatar>
+              <ColoredAvatar
+                username={profile?.username}
+                color={profile?.avatar_color || '#3B82F6'}
+                size="md"
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -118,17 +116,19 @@ export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile">
+                <Link href="/profile">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
-              </Link>
+                </Link>
             </DropdownMenuItem>
+            <ThemeToggle />
+            <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={handleSignOut}
-              className="cursor-pointer text-red-500 hover:bg-red-500 hover:text-white focus:bg-red-500 focus:text-white"
+                onClick={handleSignOut}
+                className="cursor-pointer text-red-500 hover:bg-red-500 hover:text-white focus:bg-red-500 focus:text-white"
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

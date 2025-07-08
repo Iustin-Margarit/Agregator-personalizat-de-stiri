@@ -117,11 +117,11 @@ export default function FeedFilters({
 
   if (isLoading) {
     return (
-      <div className="mb-6 p-4 bg-white border rounded-lg shadow-sm">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-gray-500" />
-          <span className="text-sm text-gray-500">Loading filters...</span>
-        </div>
+      <div className="mb-6 p-4 bg-card border rounded-lg shadow-sm">
+          <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Loading filters...</span>
+          </div>
       </div>
     );
   }
@@ -131,17 +131,17 @@ export default function FeedFilters({
   const otherCategories = categories.filter(cat => !userPreferredCategories.includes(cat.id));
 
   return (
-    <div className="mb-6 p-4 bg-white border rounded-lg shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-gray-600" />
-          <h3 className="font-medium text-gray-900">Filter by Category</h3>
-          <Badge variant="secondary" className="text-xs">
-            {selectedCount === 0 ? 'None selected' : 
-             isShowingAll ? 'All topics' : 
-             `${selectedCount} selected`}
-          </Badge>
-        </div>
+    <div className="mb-6 p-4 bg-card border rounded-lg shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-foreground" />
+                <h3 className="font-medium text-foreground">Filter by Category</h3>
+                <Badge variant="secondary" className="text-xs">
+                    {selectedCount === 0 ? 'None selected' :
+                        isShowingAll ? 'All topics' :
+                        `${selectedCount} selected`}
+                </Badge>
+            </div>
         
         <div className="flex items-center gap-2">
           {selectedCount > 0 && (
@@ -182,7 +182,7 @@ export default function FeedFilters({
       {/* Search functionality */}
       <div className="mb-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search articles by title or content..."
@@ -206,8 +206,8 @@ export default function FeedFilters({
       {/* Date filtering */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <Calendar className="h-4 w-4 text-gray-600" />
-          <p className="text-sm text-gray-600">Time Range</p>
+          <Calendar className="h-4 w-4 text-foreground" />
+          <p className="text-sm text-foreground">Time Range</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -233,7 +233,7 @@ export default function FeedFilters({
       {/* Always show user's preferred categories */}
       <div className="space-y-3">
         <div>
-          <p className="text-sm text-gray-600 mb-2">Your Topics</p>
+          <p className="text-sm text-foreground mb-2">Your Topics</p>
           <div className="flex flex-wrap gap-2">
             {userCategories.map((category) => {
               const isSelected = selectedCategoryIds.includes(category.id);
@@ -256,7 +256,7 @@ export default function FeedFilters({
         {/* Show other categories when expanded */}
         {isExpanded && otherCategories.length > 0 && (
           <div>
-            <p className="text-sm text-gray-600 mb-2">Other Categories</p>
+            <p className="text-sm text-foreground mb-2">Other Categories</p>
             <div className="flex flex-wrap gap-2">
               {otherCategories.map((category) => {
                 const isSelected = selectedCategoryIds.includes(category.id);
@@ -282,8 +282,8 @@ export default function FeedFilters({
       <div className="mt-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Newspaper className="h-4 w-4 text-gray-600" />
-            <p className="text-sm text-gray-600">News Sources</p>
+            <Newspaper className="h-4 w-4 text-foreground" />
+            <p className="text-sm text-foreground">News Sources</p>
             <Badge variant="secondary" className="text-xs">
               {selectedSourceIds.length === 0 ? 'All sources' : `${selectedSourceIds.length} selected`}
             </Badge>
@@ -338,7 +338,7 @@ export default function FeedFilters({
               }, {} as Record<string, Source[]>)
             ).map(([categoryName, sources]) => (
               <div key={categoryName} className="mb-3">
-                <p className="text-xs text-gray-500 mb-1">{categoryName}</p>
+                <p className="text-xs text-muted-foreground mb-1">{categoryName}</p>
                 <div className="flex flex-wrap gap-1">
                   {sources.map((source) => {
                     const isSelected = selectedSourceIds.includes(source.id);
@@ -364,7 +364,7 @@ export default function FeedFilters({
 
       {/* Filter status message */}
       <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           {searchQuery ? (
             `Searching for "${searchQuery}"${selectedCount > 0 ? ` in ${selectedCount} selected ${selectedCount === 1 ? 'category' : 'categories'}` : ''}${selectedSourceIds.length > 0 ? ` from ${selectedSourceIds.length} selected ${selectedSourceIds.length === 1 ? 'source' : 'sources'}` : ''}${dateFilter !== 'all' ? ` from ${dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'last 7 days' : 'last 30 days'}` : ''}`
           ) : (

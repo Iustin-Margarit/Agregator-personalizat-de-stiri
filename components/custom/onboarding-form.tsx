@@ -41,25 +41,24 @@ export default function OnboardingForm({
   user,
 }: OnboardingFormProps) {
   const router = useRouter();
-  const [username, setUsername] = useState(
-    initialUsername.startsWith('user-') ? '' : initialUsername
-  );
+  const [username, setUsername] = useState(initialUsername || '');
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialSelectedCategoryIds);
   
   const [state, formAction] = useFormState(completeOnboarding, null);
 
   useEffect(() => {
-    if (user && initialUsername.startsWith('user-')) {
-      const emailName = user.email?.split('@')[0] || '';
+    if (user && user.email) {
+      const emailName = user.email.split('@')[0] || '';
       const suggestions = [
         emailName,
         `${emailName}123`,
         `${emailName}_news`,
+        `${emailName}_reader`,
       ].filter(Boolean);
       setUsernameSuggestions(suggestions);
     }
-  }, [user, initialUsername]);
+  }, [user]);
 
   useEffect(() => {
       if (state?.success) {
@@ -79,37 +78,12 @@ export default function OnboardingForm({
     <Card>
       <form action={formAction}>
         <CardContent className="space-y-6 pt-6">
-          {!hasCompletedOnboarding && (
-            <div className="space-y-2">
-              <Label htmlFor="username">Choose a Username</Label>
-              <Input
-                id="username"
-                name="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g., newsfan123"
-                required
-                minLength={3}
-              />
-              {usernameSuggestions.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <p className="text-xs text-gray-500 w-full">Suggestions:</p>
-                  {usernameSuggestions.map((suggestion) => (
-                    <Button
-                      key={suggestion}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => setUsername(suggestion)}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Hidden username field to pass the current username */}
+          <input
+            type="hidden"
+            name="username"
+            value={username}
+          />
           <div className="space-y-2">
             <Label>Select Your Topics</Label>
             <div className="grid grid-cols-2 gap-4 pt-2">
