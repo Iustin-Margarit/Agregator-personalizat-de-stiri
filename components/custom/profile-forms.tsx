@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,15 +10,56 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { InfoModal } from '@/components/ui/info-modal';
-import { updateUsername, updateUserEmail, updateUserPassword } from "@/app/actions";
+import { updateUsername, updateUserEmail, updateUserPassword, updateBannerColor } from "@/app/actions";
 import type { User } from "@supabase/supabase-js";
+import { ColorPicker } from '@/components/ui/color-picker';
 
 interface ProfileFormsProps {
   user: User | null;
   profile: {
     username: string;
+    banner_color?: string;
   } | null;
 }
+
+type BannerColorState = {
+  error: string;
+  timestamp: number;
+  success?: undefined;
+} | {
+  success: boolean;
+  error: null;
+  timestamp: number;
+} | null;
+
+
+const BANNER_PRESET_COLORS = [
+  {
+    name: 'Ocean Blue',
+    value: '#3B82F6',
+    gradient: 'linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)'
+  },
+  {
+    name: 'Sunset Red', 
+    value: '#EF4444',
+    gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+  },
+  {
+    name: 'Forest Green',
+    value: '#10B981', 
+    gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+  },
+  {
+    name: 'Golden Amber',
+    value: '#F59E0B',
+    gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+  },
+  {
+    name: 'Royal Purple',
+    value: '#8B5CF6',
+    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)'
+  }
+];
 
 function SubmitButton({ children, disabled }: { children: React.ReactNode, disabled?: boolean }) {
   const { pending } = useFormStatus();
@@ -35,14 +76,19 @@ export function ProfileForms({ user, profile }: ProfileFormsProps) {
   const [usernameState, usernameFormAction] = useFormState(updateUsername, null);
   const [emailState, emailFormAction] = useFormState(updateUserEmail, null);
   const [passwordState, passwordFormAction] = useFormState(updateUserPassword, null);
+  const [bannerColorState, bannerColorFormAction] = useFormState(updateBannerColor, null);
 
   const [lastUsernameTimestamp, setLastUsernameTimestamp] = useState(0);
   const [lastEmailTimestamp, setLastEmailTimestamp] = useState(0);
   const [lastPasswordTimestamp, setLastPasswordTimestamp] = useState(0);
+  const [lastBannerColorTimestamp, setLastBannerColorTimestamp] = useState(0);
+
   const [newPassword, setNewPassword] = useState('');
   const [isPasswordStrong, setIsPasswordStrong] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [newEmailForModal, setNewEmailForModal] = useState('');
+
+  const [selectedBannerColor, setSelectedBannerColor] = useState(profile?.banner_color || BANNER_PRESET_COLORS[0].value);
 
   useEffect(() => {
     if (usernameState?.timestamp && usernameState.timestamp > lastUsernameTimestamp) {
@@ -81,6 +127,23 @@ export function ProfileForms({ user, profile }: ProfileFormsProps) {
     }
   }, [passwordState, showToast, lastPasswordTimestamp]);
 
+  useEffect(() => {
+    if (bannerColorState?.timestamp && bannerColorState.timestamp > lastBannerColorTimestamp) {
+        setLastBannerColorTimestamp(bannerColorState.timestamp);
+        if (bannerColorState.error) {
+            showToast({ title: "Error", message: bannerColorState.error, type: "error" });
+        } else if (bannerColorState.success) {
+            showToast({ title: "Success", message: "Banner color updated successfully!", type: "success" });
+            window.dispatchEvent(new Event('bannerColorUpdated'));
+            window.dispatchEvent(new Event('profileUpdated'));
+        }
+    }
+  }, [bannerColorState, showToast, lastBannerColorTimestamp]);
+
+  const getSelectedColorName = () => {
+    const presetColor = BANNER_PRESET_COLORS.find(c => c.value === selectedBannerColor);
+    return presetColor ? presetColor.name : selectedBannerColor;
+  };
 
   return (
     <div className="space-y-4">
@@ -98,6 +161,50 @@ export function ProfileForms({ user, profile }: ProfileFormsProps) {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
             <SubmitButton>Update Username</SubmitButton>
+          </CardFooter>
+        </form>
+      </Card>
+      
+      <Card>
+        <form action={bannerColorFormAction}>
+          <CardHeader>
+            <CardTitle>Banner Color</CardTitle>
+            <CardDescription>Customize the color of the website's top banner.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Label>Select Color</Label>
+              <div className="flex items-center gap-2">
+                {BANNER_PRESET_COLORS.map((colorObj) => (
+                  <button
+                    key={colorObj.value}
+                    type="button"
+                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                      selectedBannerColor === colorObj.value
+                        ? 'border-gray-800 scale-110'
+                        : 'border-gray-300 hover:scale-105'
+                    }`}
+                    style={{ background: colorObj.gradient }}
+                    onClick={() => setSelectedBannerColor(colorObj.value)}
+                    aria-label={`Select color ${colorObj.name}`}
+                    title={colorObj.name}
+                  />
+                ))}
+                <ColorPicker
+                  value={selectedBannerColor}
+                  onChange={setSelectedBannerColor}
+                  showPresets={false}
+                  size="sm"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Current selection: <span className="font-semibold" style={{ color: selectedBannerColor }}>{getSelectedColorName()}</span>
+              </p>
+              <input type="hidden" name="color" value={selectedBannerColor} />
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <SubmitButton>Update Banner Color</SubmitButton>
           </CardFooter>
         </form>
       </Card>

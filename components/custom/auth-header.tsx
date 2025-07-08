@@ -65,7 +65,7 @@ export default function AuthHeader({ isAdmin }: { isAdmin: boolean }) {
 
 
   return (
-    <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
+    <header className="flex justify-between items-center p-4 text-white" style={{ background: 'var(--banner-background, var(--banner-color))' }}>
       <h1 className="text-2xl font-bold">
         <Link href="/" className="hover:text-gray-300">
           Personalized News Aggregator

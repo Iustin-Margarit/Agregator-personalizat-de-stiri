@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { useToast } from '@/components/ui/toast';
+import { ColorPicker } from '@/components/ui/color-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -802,11 +803,11 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                         maxLength={40}
                         />
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
+                        <ColorPicker
                           value={editFolderColor}
-                          onChange={(e) => setEditFolderColor(e.target.value)}
-                          className="w-6 h-6 rounded border"
+                          onChange={setEditFolderColor}
+                          showPresets={true}
+                          size="sm"
                         />
                         <div className="flex items-center justify-between w-full">
                           <div className="flex gap-1">
@@ -881,11 +882,11 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                   maxLength={40}
                   />
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
+                  <ColorPicker
                     value={newFolderColor}
-                    onChange={(e) => setNewFolderColor(e.target.value)}
-                    className="w-8 h-8 rounded border"
+                    onChange={setNewFolderColor}
+                    showPresets={true}
+                    size="sm"
                   />
                   <div className="flex gap-1">
                     <Button size="sm" onClick={createFolder}>
@@ -966,11 +967,11 @@ export default function SavedArticlesManager({ userId, initialArticles, articleC
                   maxLength={15}
                   />
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
+                  <ColorPicker
                     value={newTagColor}
-                    onChange={(e) => setNewTagColor(e.target.value)}
-                    className="w-8 h-8 rounded border"
+                    onChange={setNewTagColor}
+                    showPresets={true}
+                    size="sm"
                   />
                   <div className="flex gap-1">
                     <Button size="sm" onClick={createTag}>

@@ -124,14 +124,14 @@ export default function SavedArticlesLimitModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
+      <div className="bg-card rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200 border border-border">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-full">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-full">
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Saved Articles Limit Reached
             </h2>
           </div>
@@ -150,28 +150,28 @@ export default function SavedArticlesLimitModal({
           {isLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading...</p>
+              <p className="text-muted-foreground mt-2">Loading...</p>
             </div>
           ) : limitInfo ? (
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-gray-700 mb-2">
+                <p className="text-foreground mb-2">
                   You've reached your limit of <strong>{limitInfo.limit_count} saved articles</strong>.
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   To save this article, you'll need to remove one first.
                 </p>
               </div>
 
               {/* Current Status */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-muted rounded-lg p-4 border border-border">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">Current Usage</span>
-                  <span className="text-sm font-bold text-orange-600">
+                  <span className="text-sm font-medium text-foreground">Current Usage</span>
+                  <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
                     {limitInfo.current_count}/{limitInfo.limit_count}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-secondary rounded-full h-2">
                   <div 
                     className="bg-orange-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${(limitInfo.current_count / limitInfo.limit_count) * 100}%` }}
@@ -181,12 +181,12 @@ export default function SavedArticlesLimitModal({
 
               {/* Oldest Article */}
               {limitInfo.oldest_article_title && (
-                <div className="border rounded-lg p-4 bg-red-50 border-red-200">
-                  <h4 className="font-medium text-gray-900 mb-2">Oldest Saved Article</h4>
-                  <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                <div className="border rounded-lg p-4 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
+                  <h4 className="font-medium text-foreground mb-2">Oldest Saved Article</h4>
+                  <p className="text-sm text-foreground mb-2 line-clamp-2">
                     "{limitInfo.oldest_article_title}"
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Saved {new Date(limitInfo.oldest_saved_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -194,7 +194,7 @@ export default function SavedArticlesLimitModal({
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-gray-500">Unable to load limit information.</p>
+              <p className="text-muted-foreground">Unable to load limit information.</p>
             </div>
           )}
         </div>

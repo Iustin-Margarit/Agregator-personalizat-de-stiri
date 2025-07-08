@@ -130,13 +130,13 @@ export default async function RelatedArticles({
   }
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+    <section className="bg-card rounded-lg shadow-sm p-6 md:p-8 border border-border">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Related Articles
         </h2>
         {categoryName && (
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             More articles from <span className="font-medium">{categoryName}</span> and other categories
           </p>
         )}
@@ -146,7 +146,7 @@ export default async function RelatedArticles({
         {relatedArticles.map((article) => (
           <article key={article.id} className="group">
             <Link href={`/article/${article.slug}`} className="block">
-              <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
+              <div className="border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200 bg-card">
                 {/* Article Image */}
                 {article.image_url && (
                   <div className="aspect-video w-full overflow-hidden">
@@ -162,7 +162,7 @@ export default async function RelatedArticles({
                   {/* Category Badge */}
                   {article.categories && (
                     <div className="mb-2">
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs">
                         {Array.isArray(article.categories)
                           ? article.categories[0]?.name
                           : article.categories.name}
@@ -171,17 +171,17 @@ export default async function RelatedArticles({
                   )}
                   
                   {/* Article Title */}
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {truncateText(cleanText(article.title), 80)}
                   </h3>
                   
                   {/* Article Summary */}
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
                     {truncateText(cleanText(article.summary), 120)}
                   </p>
                   
                   {/* Article Meta */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                       {article.source && (
                         <span className="font-medium">{cleanText(article.source)}</span>
@@ -199,7 +199,7 @@ export default async function RelatedArticles({
                       )}
                     </div>
                     
-                    <div className="flex items-center text-blue-600 group-hover:text-blue-800">
+                    <div className="flex items-center text-blue-600 group-hover:text-blue-800 dark:text-blue-400 dark:group-hover:text-blue-300">
                       <span className="mr-1">Read</span>
                       <ExternalLink className="h-3 w-3" />
                     </div>
@@ -215,7 +215,7 @@ export default async function RelatedArticles({
       <div className="mt-8 text-center">
         <Link 
           href="/feed" 
-          className="inline-flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+          className="inline-flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
         >
           View More Articles
           <ExternalLink className="h-4 w-4 ml-2" />

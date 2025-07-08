@@ -212,3 +212,36 @@ export async function completeOnboarding(
 
     return { success: true, error: null, timestamp: Date.now() };
 }
+export async function updateBannerColor(prevState: any, formData: FormData) {
+    const color = formData.get('color') as string;
+    const { createClient } = await import('@/lib/supabase/server');
+    const supabase = createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to update your banner color.", timestamp: Date.now() };
+    }
+
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return { error: "Invalid color format.", timestamp: Date.now() };
+    }
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ banner_color: color })
+        .eq('id', user.id);
+
+    if (error) {
+        // If banner_color column doesn't exist, return a helpful error
+        if (error.code === '42703') {
+            return { error: "Banner color feature is not available yet. Database needs to be updated.", timestamp: Date.now() };
+        }
+        return { error: "Could not update banner color.", timestamp: Date.now() };
+    }
+
+    revalidatePath('/(main)', 'layout');
+    revalidatePath('/(main)/profile', 'page');
+    revalidatePath('/profile', 'page');
+    return { success: true, error: null, timestamp: Date.now() };
+}

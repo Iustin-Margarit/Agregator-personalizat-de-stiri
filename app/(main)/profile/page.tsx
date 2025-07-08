@@ -17,6 +17,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 type Profile = {
     username: string;
     avatar_color: string;
+    banner_color: string;
 };
 
 const PRESET_COLORS = [
@@ -60,13 +61,33 @@ export default function ProfilePage() {
       setUser(user);
 
       if (user) {
-        const { data, error } = await supabase
+        // First try with banner_color, if it fails, try without it
+        let { data, error } = await supabase
           .from('profiles')
-          .select('username, avatar_color')
+          .select('username, avatar_color, banner_color')
           .eq('id', user.id)
           .single();
 
-        if (error) {
+        // If banner_color column doesn't exist, try without it
+        if (error && error.code === '42703') {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('username, avatar_color')
+            .eq('id', user.id)
+            .single();
+          
+          if (fallbackError) {
+            console.error('Error fetching profile:', fallbackError);
+            showToast({ title: 'Error', message: 'Could not fetch your profile.', type: 'error' });
+          } else if (fallbackData) {
+            // Add default banner_color if missing
+            setProfile({
+              ...fallbackData,
+              banner_color: '#3B82F6'
+            });
+            setSelectedColor(fallbackData.avatar_color || '#3B82F6');
+          }
+        } else if (error) {
           console.error('Error fetching profile:', error);
           showToast({ title: 'Error', message: 'Could not fetch your profile.', type: 'error' });
         } else if (data) {

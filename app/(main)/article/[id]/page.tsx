@@ -162,21 +162,21 @@ async function ArticleContent({ params }: { params: { id: string } }) {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Back Navigation */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Link
               href="/feed"
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-all duration-200 border border-blue-200 hover:border-blue-300"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:bg-blue-950 dark:hover:bg-blue-900 dark:hover:text-blue-300 rounded-lg transition-all duration-200 border border-blue-200 hover:border-blue-300 dark:border-blue-800 dark:hover:border-blue-700"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Feed
             </Link>
             <Link
               href="/saved"
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-700 rounded-lg transition-all duration-200 border border-green-200 hover:border-green-300"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-700 dark:text-green-400 dark:bg-green-950 dark:hover:bg-green-900 dark:hover:text-green-300 rounded-lg transition-all duration-200 border border-green-200 hover:border-green-300 dark:border-green-800 dark:hover:border-green-700"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Saved Articles
@@ -185,7 +185,7 @@ async function ArticleContent({ params }: { params: { id: string } }) {
         </div>
 
         {/* Article Header */}
-        <article className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <article className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
           {/* Hero Image with error handling */}
           {article.image_url && (
             <div className="w-full h-64 md:h-96 relative">
@@ -205,30 +205,30 @@ async function ArticleContent({ params }: { params: { id: string } }) {
             {/* Category Badge */}
             {article.categories && (
               <div className="mb-4">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                   {article.categories.name}
                 </Badge>
               </div>
             )}
 
             {/* Article Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
               {cleanText(article.title) || 'Untitled Article'}
             </h1>
 
             {/* Article Meta Information */}
-            <div className="mb-6 pb-6 border-b border-gray-200">
+            <div className="mb-6 pb-6 border-b border-border">
               {/* Source Line */}
               {(article.sources?.name || article.source) && (
                 <div className="mb-3">
-                  <span className="text-lg font-semibold text-gray-800">
+                  <span className="text-lg font-semibold text-foreground">
                     {cleanText(article.sources?.name || article.source)}
                   </span>
                 </div>
               )}
               
               {/* Author, Date, and Reading Time Line */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {article.author && (
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-1" />
@@ -278,22 +278,22 @@ async function ArticleContent({ params }: { params: { id: string } }) {
             </div>
 
             {/* Article Content */}
-            <div className="prose prose-lg max-w-none">
-              <div className="text-gray-700 leading-relaxed text-lg mb-8">
+            <div className="prose prose-lg max-w-none dark:prose-invert">
+              <div className="text-foreground leading-relaxed text-lg mb-8">
                 {cleanText(article.summary) || 'No summary available for this article.'}
               </div>
               
               {/* Read Full Article Link */}
               {article.url && (
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <p className="text-gray-600 mb-4">
+                <div className="bg-muted rounded-lg p-6 text-center border border-border">
+                  <p className="text-muted-foreground mb-4">
                     This is a summary of the article. To read the full content, visit the original source.
                   </p>
                   <a
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium"
                   >
                     Read Full Article
                     <ExternalLink className="h-4 w-4 ml-2" />
@@ -307,18 +307,18 @@ async function ArticleContent({ params }: { params: { id: string } }) {
         {/* Related Articles Section with error boundary */}
         <div className="mt-12">
           <Suspense fallback={
-            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+            <div className="bg-card rounded-lg shadow-sm p-6 md:p-8 border border-border">
               <div className="mb-6">
-                <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-8 w-48 bg-muted rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="aspect-video w-full bg-gray-200 animate-pulse"></div>
+                  <div key={i} className="border border-border rounded-lg overflow-hidden">
+                    <div className="aspect-video w-full bg-muted animate-pulse"></div>
                     <div className="p-4 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 w-4/5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-muted rounded animate-pulse"></div>
+                      <div className="h-4 w-4/5 bg-muted rounded animate-pulse"></div>
                     </div>
                   </div>
                 ))}
