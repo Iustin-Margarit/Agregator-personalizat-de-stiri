@@ -2,15 +2,15 @@ name: News Ingestion Scheduler
 
 on:
   schedule:
-    # Run every 10 hours (at :00 minutes)
-    - cron: '0 */10 * * *'
+    # Run every 24 hours (at :00 minutes)
+    - cron: '0 */24 * * *'
   # Allow manual triggering for testing
   workflow_dispatch:
 
 jobs:
   trigger-ingestion:
     # Run on main and test branches
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
