@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,17 +15,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  useEffect(() => {
+    const emailFromQuery = searchParams.get('email');
+    const messageFromQuery = searchParams.get('message');
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
+    }
+    if (messageFromQuery) {
+        setMessage(messageFromQuery);
+    }
+  }, [searchParams]);
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError("");
     setMessage("");
     setLoading(true);
 
@@ -35,7 +50,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setError(error.message);
     } else {
       router.push("/");
       router.refresh();
@@ -67,9 +82,8 @@ export default function LoginPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -81,8 +95,13 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign in"}
             </Button>
             {message && (
+                <p className="mt-4 text-sm text-center text-green-500">
+                    {message}
+                </p>
+            )}
+            {error && (
               <p className="mt-4 text-sm text-center text-red-500">
-                {message}
+                {error}
               </p>
             )}
             <div className="mt-4 text-center text-sm">

@@ -1,142 +1,21 @@
 # Active Development Context
 
 ## Current Work Focus:
-- **All Core MVP Features Complete:** Tasks 3.5.5, 3.5.6, and 3.5.7 successfully completed (2025-07-04)
-- **SEO Enhancement Complete:** Task 3.6.5 successfully completed (2025-07-05) - Slug-based URLs implemented
-- **Saved Articles Organization System:** Full implementation with folders, tags, bulk operations, and enhanced management interface
-- **Custom Modal & Notification System:** Replaced all native browser prompts with professional in-website modals and toast notifications
-- **Production Ready:** Core application features complete with SEO optimization, ready for deployment following the deployment checklist in `tasks_plan.md`
-- **Next Priority:** Production deployment with automated news ingestion configuration (critical for user experience)
+- **Admin Panel Implementation Complete:** A comprehensive admin panel with secure role-based access, user management, and content management has been implemented, debugged, and hardened.
+- **Data Integrity and UX  Enhanced:** Implemented several fixes to ensure data consistency and a better user experience, including handling for disabled sources, "ghost" saved articles, and a new saved article counter.
 
-## Active Decisions and Considerations:
-- **Source Filtering Logic:** Implemented source filtering that works in combination with category, search, and date filters
-- **UI Design:** Sources are grouped by category with select/clear all functionality for better user experience
-- **Performance:** All filtering is applied at the database level using Supabase's operators for optimal performance
-- **Filter Interaction:** All four filter types (category, search, date, source) work seamlessly together
-- **State Management:** Proper state management for all filter types with debounced search and optimized re-renders
-
-## Recent Changes (2025-07-01):
-- **Completed Task 3.3.1:** Created comprehensive `FeedFilters` UI component with category selection, clear/show all buttons, and expandable design
-- **Completed Task 3.3.2:** Implemented state management for selected categories with proper handlers for filter changes
-- **Completed Task 3.3.3:** Updated data fetching logic to re-query articles based on selected categories
-- **Completed Task 3.3.4:** Added search functionality with debounced input, filtering articles by title and content
-- **Completed Task 3.3.5:** Added date range filtering with four options (All Time, Today, Last 7 Days, Last 30 Days)
-  - **Fixed Date Range Bug:** Changed from calendar-based ranges to relative ranges to ensure articles are always available
-  - **Improved UX:** "Last 7 Days" and "Last 30 Days" are more intuitive than "This Week" and "This Month"
-- **Completed Task 3.3.6:** Added source-specific filtering functionality
-  - **Source Grouping:** Sources are organized by category for better navigation
-  - **Select/Clear All:** Added buttons to quickly select or clear all sources within a category
-  - **Filter Integration:** Source filtering works seamlessly with all other filter types
-  - **State Management:** Added `selectedSourceIds` state and proper handlers for source filter changes
-  - **Data Fetching:** Updated `fetchFilteredArticles` and `loadMoreArticles` to include source filtering logic
-  - **UI Polish:** Added newspaper icon and proper status messages for source filtering
-- **Fixed Category Mapping Bug:** Resolved issue where articles showed "Unknown" categories after filter changes
-  - **Root Cause:** Old sample articles had null `source_id` values, causing failed category lookups
-  - **Solution:** Cleaned up articles with null `source_id` and made category mapping more robust
-  - **Database Cleanup:** Removed 5 old sample articles, keeping 477 properly linked articles
-  - **Code Fix:** Enhanced category mapping to handle both object and array formats from Supabase relationships
-- **Completed Task 3.4.1:** Created `likes` table with proper RLS policies and indexes
-  - **Database Schema:** Added `likes` table with `user_id`, `article_id`, and `created_at` columns
-  - **Security:** Implemented Row Level Security (RLS) policies for user-specific access
-  - **Performance:** Added composite unique index on `user_id` and `article_id`
-- **Completed Task 3.4.2:** Added Like button to `ArticleCard` with optimistic UI updates
-  - **UI Integration:** Heart icon that changes color when liked/unliked
-  - **Optimistic Updates:** Immediate visual feedback before database confirmation
-  - **State Management:** `isLiked` state with proper initialization and updates
-- **Completed Task 3.4.3:** Implemented backend logic for like/unlike operations
-  - **Database Operations:** Insert/delete operations in the `likes` table
-  - **Error Handling:** Proper error handling with fallback to previous state
-  - **Performance:** Efficient database queries with minimal overhead
-- **Completed Automated News Ingestion:** Implemented GitHub Actions workflow for production-ready scheduling
-  - **GitHub Actions Workflow:** Created `.github/workflows/news-ingestion.yml` with 2-hour scheduling
-  - **API Integration:** Built `app/api/trigger-ingestion/route.ts` for secure ingestion triggering
-  - **Security:** Implemented authentication with `CRON_SECRET` for secure automated requests
-  - **Architecture:** GitHub Actions → Next.js API → Supabase Edge Function → RSS Feeds
-  - **Monitoring:** Comprehensive logging and error handling with detailed status reporting
-  - **Documentation:** Created complete setup guide in `docs/automated-ingestion-setup.md`
-  - **Manual Testing:** Supports both scheduled and manual workflow triggers
-  - **Production Ready:** Solves the "no news for today" issue with automated content updates
-- **Completed Task 3.4.4:** Implemented analytics system to track like patterns for personalization
-  - **Analytics System:** Created comprehensive `Analytics` class in `lib/analytics.ts`
-  - **Database Schema:** Added `analytics_data` JSONB column to `profiles` table with GIN index
-  - **Event Tracking:** Track like/unlike events with article category and source information
-  - **User Patterns:** Generate user preference patterns based on like activity
-  - **Aggregated Stats:** Provide system-wide analytics including most liked categories and articles
-  - **Integration:** Analytics automatically triggered on like/unlike actions in `ArticleCard`
-  - **Privacy-First:** Analytics stored in user's own profile, no cross-user data sharing
-- **Resolved Supabase Port Conflicts:** Fixed Windows reserved port issues with Supabase local development
-  - **Root Cause:** Default Supabase ports conflicted with Windows reserved port ranges
-  - **Solution:** Updated `supabase/config.toml` to use alternative ports (API: 58321, DB: 58322, Studio: 58323)
-  - **Environment:** Ensured Docker Desktop compatibility and stable local development setup
-- **Added Automated Data Retention Policy:** Implemented a daily database job (`pg_cron`) to automatically delete articles older than 30 days.
-  - **Benefit:** Ensures data relevance, manages database growth, and improves overall system performance by keeping the `articles` table lean.
-  - **Files:** `supabase/migrations/20250704130000_add_article_cleanup_job.sql`
-- **Completed Tasks 3.5.5 & 3.5.6 (2025-07-04):** Implemented comprehensive saved articles organization and bulk actions
-  - **Database Schema:** Created `saved_folders`, `saved_tags`, and `saved_article_tags` tables with full RLS policies
-  - **Extended saved_articles:** Added `folder_id`, `is_read`, `notes`, and `updated_at` columns
-  - **SavedArticlesManager Component:** Built comprehensive management interface with sidebar organization
-  - **EnhancedArticleCard Component:** Enhanced article cards with organization controls and visual indicators
-  - **Folder Management:** Create/edit folders with color customization and article assignment
-  - **Tag System:** Create/manage tags with color coding and many-to-many article relationships
-  - **Bulk Operations:** Select multiple articles, mark as read/unread, move to folders, delete with confirmation
-  - **Filtering:** Filter saved articles by folder, tags, and read status
-  - **Migration Applied:** `20250704190000_add_saved_articles_organization.sql` successfully deployed
-  - **User Experience:** Intuitive organization system with real-time state synchronization
-- **Completed Task 3.5.7 (2025-07-04):** Replaced all native browser prompts with custom in-website modals and notifications
-  - **Custom Confirmation Modal:** Built [`ConfirmationModal`](components/ui/confirmation-modal.tsx) component with:
-    - Professional design matching site aesthetics
-    - Smooth CSS transitions and animations
-    - Backdrop click and Escape key handling
-    - Support for destructive and default variants
-    - Proper accessibility with focus management
-  - **Toast Notification System:** Implemented comprehensive toast system with:
-    - [`Toast`](components/ui/toast.tsx) provider pattern for global access
-    - Auto-dismiss functionality with configurable duration
-    - Multiple types: success, error, warning, info
-    - Manual close capability with X button
-    - Proper positioning and z-index management
-  - **Component Updates:** Updated all components to use new system:
-    - [`SavedArticlesManager`](components/custom/saved-articles-manager.tsx): Replaced 3 `confirm()` calls and 8 `alert()` calls
-    - [`EnhancedArticleCard`](components/custom/enhanced-article-card.tsx): Replaced `alert()` with toast notifications
-    - [`ArticleCard`](components/custom/article-card.tsx): Added toast notifications for login requirements
-  - **Root Integration:** Added [`ToastProvider`](app/layout.tsx) wrapper at root level for global toast access
-  - **User Experience Improvements:**
-    - Eliminated jarring native browser dialogs
-    - Consistent design system integration
-    - Better accessibility and keyboard navigation
-    - Professional appearance with smooth animations
-    - Contextual messaging with appropriate icons and colors
-
-## Recent Changes (2025-07-05):
-- **Completed Task 3.6.1 (Article Detail Page):** Implemented comprehensive article detail view at `/article/[id]`
-  - **Full Content Display:** Professional article layout with hero image, category badges, meta information, and reading time calculation
-  - **Article Interactions:** Created [`ArticleInteractions`](components/custom/article-interactions.tsx) component with like, save, and share functionality
-  - **Enhanced Navigation:** Added back navigation to feed and clickable article titles in [`ArticleCard`](components/custom/article-card.tsx)
-  - **Professional Design:** Responsive layout with proper typography, spacing, and visual hierarchy
-  - **Reading Experience:** Calculated reading time, formatted publication dates, and clear call-to-action for full article
-- **Completed Task 3.6.2 (Related Articles):** Implemented intelligent related articles system
-  - **Category-Based Recommendations:** [`RelatedArticles`](components/custom/related-articles.tsx) component shows articles from same category first
-  - **Fallback Strategy:** If insufficient articles in same category, shows articles from other categories
-  - **Smart Layout:** Responsive grid layout with article previews, category badges, and hover effects
-  - **Enhanced Navigation:** Direct links to related articles and back to main feed
-  - **Performance Optimized:** Server-side rendering with efficient database queries
-- **UI Enhancements:** Added line-clamp utility classes to [`globals.css`](styles/globals.css) for text truncation
-- **Navigation Improvements:** Made article titles clickable in feed cards for seamless navigation to detail view
-- **Completed Task 3.6.5 (SEO-Friendly URLs):** Implemented comprehensive slug-based URL system
-  - **Database Enhancement:** Added `slug` column to articles table with automatic generation via PostgreSQL functions and triggers
-  - **Smart Slug Generation:** Creates readable URLs from article titles with 100-character truncation and unique constraint handling
-  - **Fallback Logic:** Articles with non-English or special character titles get `article-N` format (e.g., `article-191`)
-  - **Route Consolidation:** Resolved Next.js routing conflicts by consolidating `[id]` and `[slug]` routes into single dynamic route
-  - **Backward Compatibility:** Single route handles both new slugs and old UUIDs seamlessly using `isUUID()` helper function
-  - **Component Updates:** Updated [`ArticleCard`](components/custom/article-card.tsx) and [`RelatedArticles`](components/custom/related-articles.tsx) to use slugs in links
-  - **RPC Function Update:** Enhanced `get_user_visible_articles` to include slug field in responses
-  - **Migration Files:** Applied `20250705000002_add_article_slugs.sql` and `20250705000003_update_rpc_functions_for_slugs.sql`
-  - **SEO Benefits:** URLs now readable (e.g., `/article/july-4th-sales-the-65-best-deals...`) instead of UUIDs for better search engine optimization
+## Recent Changes (2025-07-07):
+- **Implemented Admin Panel (Epic 9):**
+  - Added Role-Based Access Control (RBAC) to the database.
+  - Built protected frontend routes and UI for user and content management.
+  - Patched a critical "admin lockout" vulnerability.
+  - Ensured that disabling a news source correctly hides its articles from all user-facing views (feed, saved articles, filters).
+  - Added a banner to allow users to clear saved articles from disabled sources ("ghost slots").
+  - Added a saved article counter to the UI and a scalable limit to the database.
+  - Cleaned up deprecated data from the database.
+- **Resolved Production/Local DB Mismatch:** Identified and fixed a critical bug where the local development environment was pointed at the production database, and synchronized the production database schema with all local migrations.
 
 ## Next Steps:
-- **IMMEDIATE PRIORITY:** Production deployment following the deployment checklist in `tasks_plan.md`
-- **CRITICAL:** Configure automated news ingestion (GitHub Actions + Vercel environment variables)
-- **SEO Verification:** Test slug URLs in production and verify search engine indexing with new readable URLs
-- **Post-Deployment Validation:** Verify fresh articles appear every 2 hours, test all user flows including new article detail pages with slug URLs
-- **Future Development:** After successful deployment, continue with Task 3.6.3 & 3.6.4 (Reading Time & Progress Tracking) or Epic 4 (Social Features)
-- **Monitoring:** Set up production monitoring and alerts for automated ingestion failures and slug generation performance
+- **IMMEDIATE PRIORITY:** Proceed with the Production Deployment Checklist as detailed in `tasks_plan.md`.
+- **CRITICAL:** Ensure all environment variables are correctly configured for the production deployment.
+- **Future Development:** After successful deployment, development can continue with Phase 2 features, such as Social and Community Features (Epic 4).

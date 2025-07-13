@@ -308,9 +308,9 @@ export default function ArticleInteractions({ article, userId }: ArticleInteract
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <div className="animate-pulse bg-gray-200 rounded-lg h-10 w-24"></div>
-        <div className="animate-pulse bg-gray-200 rounded-lg h-10 w-24"></div>
-        <div className="animate-pulse bg-gray-200 rounded-lg h-10 w-24"></div>
+        <div className="animate-pulse bg-muted rounded-lg h-10 w-24"></div>
+        <div className="animate-pulse bg-muted rounded-lg h-10 w-24"></div>
+        <div className="animate-pulse bg-muted rounded-lg h-10 w-24"></div>
       </div>
     );
   }

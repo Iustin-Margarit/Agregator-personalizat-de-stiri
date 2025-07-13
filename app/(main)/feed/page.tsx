@@ -90,7 +90,8 @@ async function FeedData() {
         name
       )
     `)
-    .in('category_id', preferredCategoryIds);
+    .in('category_id', preferredCategoryIds)
+    .eq('is_enabled', true);
 
   if (sourcesError) {
     console.error('Error fetching sources:', sourcesError);

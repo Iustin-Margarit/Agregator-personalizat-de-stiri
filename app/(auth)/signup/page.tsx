@@ -15,19 +15,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength } from "@/components/ui/password-strength";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isPasswordStrong, setIsPasswordStrong] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("");
+    setError("");
     setLoading(true);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -38,11 +50,9 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setError(error.message);
     } else {
-      setMessage("Check your email to continue the sign-up process.");
-      // Optionally, you can clear the form or redirect the user
-      // router.push('/some-page');
+      setMessage("Success! Please check your email to verify your account and complete the sign-up process.");
     }
     setLoading(false);
   };
@@ -52,7 +62,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-sm">
         <form onSubmit={handleSignUp}>
           <CardHeader>
-            <CardTitle className="text-2xl">Sign Up</CardTitle>
+            <CardTitle className="text-2xl">Create an Account</CardTitle>
             <CardDescription>
               Enter your information to create an account.
             </CardDescription>
@@ -71,22 +81,38 @@ export default function SignupPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
+                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+              <PasswordStrength password={password} onStrengthChange={setIsPasswordStrong} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <PasswordInput
+                id="confirm-password"
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="w-full" type="submit" disabled={loading || !isPasswordStrong}>
               {loading ? "Creating account..." : "Create account"}
             </Button>
             {message && (
-              <p className="mt-4 text-sm text-center text-red-500">
+              <p className="mt-4 text-sm text-center text-green-500">
                 {message}
+              </p>
+            )}
+            {error && (
+              <p className="mt-4 text-sm text-center text-red-500">
+                {error}
               </p>
             )}
             <div className="mt-4 text-center text-sm">

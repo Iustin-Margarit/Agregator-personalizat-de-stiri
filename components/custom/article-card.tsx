@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/toast';
 import { analytics } from '@/lib/analytics';
+import { getCategoryStyle } from '@/lib/category-styles';
 import SavedArticlesLimitModal from './saved-articles-limit-modal';
 import Link from 'next/link';
 
@@ -245,11 +246,23 @@ export default function ArticleCard({ article, userId }: ArticleCardProps) {
           )}
           
           {/* Category badge */}
-          {article.category && (
-            <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 w-fit">
-              {cleanText(article.category)}
-            </span>
-          )}
+          {article.category && (() => {
+            const categoryStyle = getCategoryStyle(cleanText(article.category));
+            const IconComponent = categoryStyle.icon;
+            
+            return (
+              <span
+                className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 w-fit"
+                style={{
+                  backgroundColor: categoryStyle.bgColor,
+                  color: categoryStyle.color
+                }}
+              >
+                <IconComponent className="h-3 w-3" />
+                {cleanText(article.category)}
+              </span>
+            );
+          })()}
           
           <Link href={`/article/${article.slug}`}>
             <h2 className="text-xl font-semibold mb-2 hover:text-blue-600 cursor-pointer transition-colors">

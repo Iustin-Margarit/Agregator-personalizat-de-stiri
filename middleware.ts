@@ -38,38 +38,49 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // This is the recommended way to handle authentication in Next.js middleware
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
   // Define routes that do not require authentication
   const unprotectedRoutes = ['/login', '/signup', '/forgot-password', '/update-password'];
 
-  // Check if the current path is a protected route
-  const isProtectedRoute = !unprotectedRoutes.includes(pathname);
-
   // Redirect unauthenticated users from protected routes to login
-  if (!session && isProtectedRoute) {
+  if (!user && !unprotectedRoutes.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users from auth routes to home
-  if (session && unprotectedRoutes.includes(pathname)) {
+  // Redirect authenticated users from auth routes to the main feed
+  if (user && unprotectedRoutes.includes(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = '/saved';
+    url.pathname = '/feed';
     return NextResponse.redirect(url);
   }
 
-  // Handle onboarding redirection
-  if (session && pathname !== '/onboarding') {
+  // Handle Admin Route Protection
+  if (user && pathname.startsWith('/admin')) {
+    const { data: isAdmin, error } = await supabase.rpc('is_admin', {
+      p_user_id: user.id,
+    });
+
+    if (error || !isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/feed'; // Redirect non-admins to the main feed
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Handle onboarding redirection for authenticated, non-admin users
+  if (user && !pathname.startsWith('/admin') && pathname !== '/onboarding') {
     const { data: profile } = await supabase
       .from('profiles')
       .select('has_completed_onboarding')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile && !profile.has_completed_onboarding) {
