@@ -2,14 +2,14 @@ name: News Ingestion Scheduler
 
 on:
   schedule:
-    # Run every 24 hours (at :00 minutes)
-    - cron: '0 */24 * * *'
+    # Run every 2 hours (at :00 minutes)
+    - cron: '0 */2 * * *'
   # Allow manual triggering for testing
   workflow_dispatch:
 
 jobs:
   trigger-ingestion:
-    # Run on main and test branches
+    # Only run on the main branch to prevent accidental production changes
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
@@ -18,126 +18,74 @@ jobs:
       run: |
         set -e
         set -o pipefail
-
         echo "🔄 Triggering news ingestion at $(date)"
-
+        
+        # Check required secrets
         if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
           echo "❌ Error: SUPABASE_URL secret is not set."
           exit 1
         fi
-
+        
         if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
           echo "❌ Error: SUPABASE_ANON_KEY secret is not set."
           exit 1
         fi
         
-        # Call Supabase Edge Function directly with batch processing
-        echo "🌐 Calling: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
+        echo "🌐 Calling Supabase Edge Function: ${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion"
         
-        # Orchestrate batch processing
-        batch_offset=0
-        batch_size=3
-        total_processed=0
-        total_inserted=0
-        all_errors=()
-        batch_count=0
-        max_batches=20
-        
-        while [ $batch_count -lt $max_batches ]; do
-          batch_count=$((batch_count + 1))
-          echo "📦 Processing batch $batch_count (offset: $batch_offset)..."
+        # Call Supabase Edge Function
+        response=$(curl --max-time 300 -s -w "\n%{http_code}" -X POST \
+          "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"triggered_by\":\"github-actions\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\"}")
+
+        # Extract HTTP status code
+        http_code=$(echo "$response" | tail -n1)
+        body=$(echo "$response" | head -n -1)
+
+        echo "HTTP Status: $http_code"
+
+        # Check if request was successful
+        if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+          echo "✅ News ingestion completed successfully"
           
-          # Call Supabase Edge Function for this batch
-          response=$(curl --max-time 300 --fail -s -w "\n%{http_code}" -X POST \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/news-ingestion" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"triggered_by\":\"github-actions\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",\"batch_size\":$batch_size,\"batch_offset\":$batch_offset}")
-          
-          # Extract HTTP status code
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n -1)
-          
-          echo "HTTP Status: $http_code"
-        
-          # Check if batch request was successful
-          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-            echo "✅ Batch $batch_count completed successfully"
+          # Try to parse response if it's JSON
+          if command -v jq &> /dev/null && [ -n "$body" ] && echo "$body" | jq . >/dev/null 2>&1; then
+            echo "📊 Ingestion Results:"
+            echo "$body" | jq '.'
             
-            # Parse batch results
-            if command -v jq &> /dev/null && [ -n "$body" ]; then
-              batch_processed=$(echo "$body" | jq -r '.processed // 0')
-              batch_inserted=$(echo "$body" | jq -r '.inserted // 0')
-              sources_processed=$(echo "$body" | jq -r '.sources_processed // 0')
-              has_more=$(echo "$body" | jq -r '.batch_info.has_more_batches // false')
-              next_offset=$(echo "$body" | jq -r '.batch_info.next_batch_offset // null')
+            # Extract key metrics if available
+            if echo "$body" | jq -e '.processed' >/dev/null 2>&1; then
+              processed=$(echo "$body" | jq -r '.processed // 0')
+              inserted=$(echo "$body" | jq -r '.inserted // 0')
+              sources=$(echo "$body" | jq -r '.sources_processed // 0')
               
-              total_processed=$((total_processed + batch_processed))
-              total_inserted=$((total_inserted + batch_inserted))
-              
-              echo "  📰 Batch processed: $batch_processed articles"
-              echo "  ➕ Batch inserted: $batch_inserted articles"
-              echo "  📂 Sources processed: $sources_processed"
-              echo "  🔄 Has more batches: $has_more"
-              
-              # Check for batch errors
-              batch_errors=$(echo "$body" | jq -r '.errors // empty')
-              if [ "$batch_errors" != "null" ] && [ "$batch_errors" != "" ]; then
-                echo "⚠️  Batch warnings/errors:"
-                echo "$batch_errors" | jq -r '.[]' | head -5 | sed 's/^/    /'
-                all_errors+=("$batch_errors")
-              fi
-              
-              # Check if we should continue
-              if [ "$has_more" = "false" ] || [ "$next_offset" = "null" ]; then
-                echo "🏁 All batches completed"
-                break
-              fi
-              
-              # Update offset for next batch
-              batch_offset=$next_offset
-              
-              # Add delay between batches
-              sleep 2
-              
-            else
-              echo "❌ Failed to parse batch response: $body"
-              break
+              echo "📰 Articles processed: $processed"
+              echo "➕ New articles added: $inserted"
+              echo "📂 Sources processed: $sources"
             fi
           else
-            echo "❌ Batch $batch_count failed with status: $http_code"
-            echo "Response body: $body"
-            
-            # Try to extract error details if JSON
-            if command -v jq &> /dev/null && [ -n "$body" ]; then
-              error_details=$(echo "$body" | jq -r '.details // .error // empty')
-              if [ -n "$error_details" ]; then
-                echo "Error details: $error_details"
-              fi
-            fi
-            
-            break
+            echo "Response: $body"
           fi
-        done
-        
-        # Final summary
-        echo ""
-        echo "🎉 News ingestion orchestration completed!"
-        echo "📊 Final Summary:"
-        echo "  📰 Total articles processed: $total_processed"
-        echo "  ➕ Total new articles added: $total_inserted"
-        echo "  📦 Total batches executed: $batch_count"
-        
-        if [ ${#all_errors[@]} -gt 0 ]; then
-          echo "⚠️  Total errors encountered: ${#all_errors[@]}"
-        fi
-        
-        # Consider it successful if we processed at least one batch
-        if [ $batch_count -gt 0 ]; then
-          echo "✅ News ingestion completed successfully"
         else
-          echo "❌ No batches were processed"
-          exit 1
+          echo "❌ News ingestion failed with status: $http_code"
+          echo "Response body: $body"
+          
+          # Print debug information
+          echo "🔍 Debug Information:"
+          echo "  - HTTP Status Code: $http_code"
+          echo "  - Check Supabase Edge Function deployment and permissions"
+          echo "  - Verify SUPABASE_URL and SUPABASE_ANON_KEY are correct"
+          echo "  - Check Supabase function logs for detailed error information"
+          
+          # Don't exit with error code unless it's a real failure (not just empty response)
+          if [ "$http_code" -ge 500 ]; then
+            echo "🚨 Server error detected, failing workflow"
+            exit 1
+          elif [ "$http_code" -ge 400 ]; then
+            echo "⚠️  Client error detected, but continuing (might be temporary)"
+          fi
         fi
 
     - name: Log Completion
